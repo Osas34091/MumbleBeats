@@ -1,0 +1,28 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+yt-dlp
+yt-dlp_linux
+yt-dlp_macos
+ffmpeg
+
+# Go workspaces and build files
+go.work
+go.work.sum
+bin/
+obj/
+*.out
+
+# Temporary files
+ffmpeg_temp.zip
+*.log
+*.tmp
+.DS_Store
+
+# IDEs
+.idea/
+.vscode/
+*.swp
