@@ -463,6 +463,11 @@ func (s *Server) handleSaveConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	
+	// Si la configuración se guarda correctamente, reconectamos en background
+	go func() {
+		s.Bot.Reconnect()
+	}()
+	
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]bool{"success": true})
 }
