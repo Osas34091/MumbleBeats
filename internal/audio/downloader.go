@@ -68,9 +68,13 @@ func ensureYtDlp(ctx context.Context) error {
 	}
 	
 	// 2. Verificar en carpeta actual
-	if _, err := os.Stat(exeName); err == nil {
-		fmt.Printf("✅ yt-dlp detectado en la carpeta actual.\n")
-		return nil
+	if info, err := os.Stat(exeName); err == nil {
+		if info.Size() > 5000000 { // Debe ser mayor a 5MB
+			fmt.Printf("✅ yt-dlp detectado en la carpeta actual.\n")
+			return nil
+		}
+		// Si es menor a 5MB, probablemente es un archivo corrupto de una descarga fallida
+		os.Remove(exeName)
 	}
 
 	fmt.Printf("⏳ Descargando %s (Requerido para leer audio de internet)...\n", exeName)
