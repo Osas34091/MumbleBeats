@@ -1,5 +1,4 @@
 <div align="center">
-  <h1>🎵 MumbleBeats</h1>
   <p align="center">
   <img src="logo.svg" alt="MumbleBeats Logo" width="600">
 </p>
