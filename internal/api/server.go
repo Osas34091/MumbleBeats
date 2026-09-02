@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
+	"path/filepath"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -21,10 +23,14 @@ type Server struct {
 	Config *config.Config
 	Bot    *mumble.BotClient
 	Router *chi.Mux
+	Hub    *WSHub
 }
 
 func NewServer(cfg *config.Config, bot *mumble.BotClient) *Server {
 	r := chi.NewRouter()
+	
+	hub := NewWSHub()
+	go hub.Run()
 	
 	// Middleware
 	r.Use(middleware.Logger)
@@ -42,6 +48,7 @@ func NewServer(cfg *config.Config, bot *mumble.BotClient) *Server {
 		Config: cfg,
 		Bot:    bot,
 		Router: r,
+		Hub:    hub,
 	}
 	
 	s.setupRoutes()
@@ -50,6 +57,7 @@ func NewServer(cfg *config.Config, bot *mumble.BotClient) *Server {
 
 func (s *Server) setupRoutes() {
 	s.Router.Route("/api", func(r chi.Router) {
+		r.Get("/ws", s.Hub.ServeWS)
 		r.Get("/queue", s.handleGetQueue)
 		r.Post("/play", s.handlePlay)
 		r.Post("/skip", s.handleSkip)
@@ -63,6 +71,7 @@ func (s *Server) setupRoutes() {
 		r.Get("/playlists", s.handleGetPlaylists)
 		r.Post("/playlists/save", s.handleSavePlaylist)
 		r.Post("/playlists/load", s.handleLoadPlaylist)
+		r.Post("/upload", s.handleUpload)
 	})
 	
 	// Servir frontend en la raíz usando go:embed
@@ -98,14 +107,9 @@ func (s *Server) Start(port string) error {
 
 // Controladores
 
-func (s *Server) handleGetQueue(w http.ResponseWriter, r *http.Request) {
-	tracks, err := db.GetQueue(50)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+func (s *Server) GetState() map[string]interface{} {
+	tracks, _ := db.GetQueue(50)
 	
-	// Datos adicionales de Now Playing
 	var currentTrack *db.Track
 	position := 0
 	isPaused := false
@@ -118,16 +122,20 @@ func (s *Server) handleGetQueue(w http.ResponseWriter, r *http.Request) {
 		speed = s.Bot.Player.Speed
 	}
 
-	response := map[string]interface{}{
+	return map[string]interface{}{
+		"type":        "STATE_UPDATE",
 		"queue":       tracks,
 		"now_playing": currentTrack,
 		"position":    position,
 		"is_paused":   isPaused,
 		"speed":       speed,
 	}
-	
+}
+
+func (s *Server) handleGetQueue(w http.ResponseWriter, r *http.Request) {
+	state := s.GetState()
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	json.NewEncoder(w).Encode(state)
 }
 
 type PlayRequest struct {
@@ -277,6 +285,43 @@ func (s *Server) handleLoadPlaylist(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]bool{"success": true})
+}
+
+func (s *Server) handleUpload(w http.ResponseWriter, r *http.Request) {
+	// Limitar el tamaño de la subida a 50MB
+	r.ParseMultipartForm(50 << 20)
+	
+	file, handler, err := r.FormFile("file")
+	if err != nil {
+		http.Error(w, "Error recuperando archivo", http.StatusBadRequest)
+		return
+	}
+	defer file.Close()
+	
+	// Crear directorio si no existe
+	if err := os.MkdirAll("music", 0755); err != nil {
+		http.Error(w, "Error creando directorio music", http.StatusInternalServerError)
+		return
+	}
+	
+	filePath := filepath.Join("music", handler.Filename)
+	dst, err := os.Create(filePath)
+	if err != nil {
+		http.Error(w, "Error creando archivo", http.StatusInternalServerError)
+		return
+	}
+	defer dst.Close()
+	
+	if _, err := io.Copy(dst, file); err != nil {
+		http.Error(w, "Error guardando archivo", http.StatusInternalServerError)
+		return
+	}
+	
+	// Reindexar base de datos
+	db.IndexLocalLibrary("music")
+	
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]bool{"success": true})
 }

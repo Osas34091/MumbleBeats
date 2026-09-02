@@ -63,6 +63,12 @@ func main() {
 	// 5. Iniciar Servidor API Web
 	fmt.Println("Iniciando API HTTP...")
 	apiServer := api.NewServer(cfg, botClient)
+	
+	// Enganchar el reproductor con los WebSockets
+	botClient.Player.OnStateChange = func() {
+		apiServer.Hub.Broadcast(apiServer.GetState())
+	}
+	
 	go func() {
 		if err := apiServer.Start(":8080"); err != nil {
 			fmt.Printf("Error en Servidor HTTP: %v\n", err)

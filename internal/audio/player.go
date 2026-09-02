@@ -30,6 +30,8 @@ type Player struct {
 	Position     time.Duration
 	Speed        float32
 	IsPaused     bool
+	
+	OnStateChange func() // Callback para notificar cambios (WebSockets)
 }
 
 func NewPlayer(client *gumble.Client) *Player {
@@ -97,6 +99,11 @@ func (p *Player) PlayURL(track *db.Track) error {
 	}
 
 	fmt.Println("Iniciando FFmpeg...")
+	
+	if p.OnStateChange != nil {
+		p.OnStateChange()
+	}
+	
 	return p.PlayDirectStream(ctx, streamURL)
 }
 
@@ -114,6 +121,10 @@ func (p *Player) PlayRadio(track *db.Track) error {
 	if p.client.Self.Channel != nil {
 		msg := fmt.Sprintf(`Reproduciendo Radio: <b>%s</b> (Añadido por %s)`, track.URL, track.AddedBy)
 		p.client.Self.Channel.Send(msg, false)
+	}
+	
+	if p.OnStateChange != nil {
+		p.OnStateChange()
 	}
 
 	return p.PlayDirectStream(ctx, track.URL)
@@ -135,6 +146,10 @@ func (p *Player) PlayLocal(track *db.Track) error {
 	if p.client.Self.Channel != nil {
 		msg := fmt.Sprintf(`Reproduciendo archivo local: <b>%s</b> (Añadido por %s)`, track.Title, track.AddedBy)
 		p.client.Self.Channel.Send(msg, false)
+	}
+	
+	if p.OnStateChange != nil {
+		p.OnStateChange()
 	}
 
 	return p.PlayDirectStream(ctx, track.URL)
@@ -208,6 +223,13 @@ func (p *Player) PlayDirectStream(ctx context.Context, streamURL string) error {
 			// Actualizar posición (10ms transcurridos en tiempo real de audio, ajustado por velocidad)
 			// Ya que leemos 10ms cada vez
 			p.Position += time.Duration(10 * float32(time.Millisecond) * p.Speed)
+			
+			// Notificar cambio de estado cada ~1 segundo (100 iteraciones de 10ms)
+			if int(p.Position.Milliseconds()/10)%100 == 0 {
+				if p.OnStateChange != nil {
+					p.OnStateChange()
+				}
+			}
 
 			// Aplicar Ducking y Volumen Base
 			vol := p.BaseVolume
@@ -228,10 +250,16 @@ func (p *Player) PlayDirectStream(ctx context.Context, streamURL string) error {
 
 func (p *Player) Pause() {
 	p.IsPaused = true
+	if p.OnStateChange != nil {
+		p.OnStateChange()
+	}
 }
 
 func (p *Player) Resume() {
 	p.IsPaused = false
+	if p.OnStateChange != nil {
+		p.OnStateChange()
+	}
 }
 
 func (p *Player) Stop() {
@@ -239,9 +267,13 @@ func (p *Player) Stop() {
 		p.cancel()
 		p.cancel = nil
 	}
-	p.IsPaused = false
-	p.Position = 0
 	p.CurrentTrack = nil
+	p.Position = 0
+	p.IsPaused = false
+	
+	if p.OnStateChange != nil {
+		p.OnStateChange()
+	}
 }
 
 func (p *Player) StartDucking() {

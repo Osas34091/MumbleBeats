@@ -81,8 +81,58 @@ function App() {
   useEffect(() => {
     fetchQueue()
     fetchPlaylists()
-    const interval = setInterval(fetchQueue, 5000)
-    return () => clearInterval(interval)
+    
+    // Configurar WebSocket
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${window.location.host}/api/ws`;
+    
+    let ws;
+    let reconnectTimer;
+    
+    const connectWS = () => {
+      ws = new WebSocket(wsUrl);
+      
+      ws.onopen = () => {
+        console.log('WS Conectado');
+        setIsOnline(true);
+      };
+      
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === 'STATE_UPDATE') {
+            setQueue(data.queue || []);
+            setNowPlaying(data.now_playing || null);
+            setPlaybackState({
+              position: data.position || 0,
+              is_paused: data.is_paused || false,
+              speed: data.speed || 1.0
+            });
+            setIsOnline(true);
+          }
+        } catch (err) {
+          console.error("Error parseando WS message", err);
+        }
+      };
+      
+      ws.onclose = () => {
+        console.log('WS Desconectado, reconectando...');
+        setIsOnline(false);
+        reconnectTimer = setTimeout(connectWS, 3000);
+      };
+      
+      ws.onerror = (err) => {
+        console.error('WS Error:', err);
+        ws.close();
+      };
+    };
+    
+    connectWS();
+    
+    return () => {
+      clearTimeout(reconnectTimer);
+      if (ws) ws.close();
+    }
   }, [])
 
   const handlePlay = async (e) => {
@@ -311,6 +361,58 @@ function App() {
                 ))
               )}
             </div>
+          </div>
+          
+          {/* Upload MP3 */}
+          <div className="glass-panel rounded-2xl p-6 relative mt-6">
+            <h2 className="text-sm font-bold text-slate-400 tracking-widest uppercase mb-4 flex items-center gap-2">
+              <ListMusic size={16} /> Subir MP3 Local
+            </h2>
+            <div className="flex gap-2 mb-2">
+              <input
+                type="file"
+                accept=".mp3,.m4a,.wav"
+                id="file-upload"
+                className="hidden"
+                disabled={isLoading}
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  
+                  // Optimistic state
+                  const prevLabel = document.getElementById('upload-label-text').innerText;
+                  document.getElementById('upload-label-text').innerText = 'Subiendo ' + file.name + '...';
+                  document.getElementById('upload-label').classList.add('animate-pulse');
+                  
+                  const formData = new FormData();
+                  formData.append('file', file);
+                  try {
+                    await fetch('/api/upload', {
+                      method: 'POST',
+                      body: formData
+                    });
+                    e.target.value = '';
+                    document.getElementById('upload-label-text').innerText = '¡Subido con éxito!';
+                    setTimeout(() => {
+                      document.getElementById('upload-label-text').innerText = 'Haz clic para seleccionar un archivo (.mp3, .m4a)';
+                    }, 3000);
+                  } catch (err) {
+                    console.error('Error uploading:', err);
+                    document.getElementById('upload-label-text').innerText = 'Error al subir';
+                  } finally {
+                    document.getElementById('upload-label').classList.remove('animate-pulse');
+                  }
+                }}
+              />
+              <label 
+                id="upload-label"
+                htmlFor="file-upload" 
+                className={`flex-1 bg-slate-800/50 border border-dashed border-slate-700/50 rounded-xl py-4 px-4 text-center text-slate-400 cursor-pointer hover:bg-slate-800 transition-colors text-sm ${isLoading ? 'opacity-50 pointer-events-none' : ''}`}
+              >
+                <span id="upload-label-text">Haz clic para seleccionar un archivo (.mp3, .m4a)</span>
+              </label>
+            </div>
+            <p className="text-xs text-slate-500 text-center">Una vez subido, puedes reproducirlo usando el buscador de arriba.</p>
           </div>
           
         </div>
