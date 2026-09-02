@@ -465,7 +465,9 @@ func (s *Server) handleSaveConfig(w http.ResponseWriter, r *http.Request) {
 	
 	// Si la configuración se guarda correctamente, reconectamos en background
 	go func() {
-		s.Bot.Reconnect()
+		if err := s.Bot.Reconnect(); err != nil {
+			fmt.Printf("ADVERTENCIA: Error al reconectar a Mumble: %v\n", err)
+		}
 	}()
 	
 	w.Header().Set("Content-Type", "application/json")
