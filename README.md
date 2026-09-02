@@ -17,14 +17,14 @@ MumbleBeats es un bot de música moderno y auto-contenido para servidores **Mumb
 
 ## Características
 
-- **- Audio Estéreo en Tiempo Real** — Opus a 48kHz vía FFmpeg → Gumble, latencia de ~10ms
-- **- Dashboard Web Reactivo** — Control total desde el navegador, sincronizado en tiempo real con WebSockets
-- **- Filtros DSP en Vivo** — Nightcore, Bass Boost, Echo, sin interrumpir la canción (hot-swap FFmpeg)
-- **- Radio en Directo** — Integración con `radio-browser.info` via `!radio <nombre>`
-- **- Control de Volumen Global** — Slider en la web y comando `!volume` en Mumble (0–200%)
-- **- Panel de Configuración Web** — Cambia servidor, usuario, admins... sin tocar ningún archivo
-- **- Auto-Setup** — Descarga `yt-dlp` y `ffmpeg` automáticamente en la primera ejecución
-- **- Sin Terminal Visible** — En Windows el bot corre completamente en segundo plano
+- ** Audio Estéreo en Tiempo Real** — Opus a 48kHz vía FFmpeg → Gumble, latencia de ~10ms
+- ** Dashboard Web Reactivo** — Control total desde el navegador, sincronizado en tiempo real con WebSockets
+- ** Filtros DSP en Vivo** — Nightcore, Bass Boost, Echo, sin interrumpir la canción (hot-swap FFmpeg)
+- ** Radio en Directo** — Integración con `radio-browser.info` via `!radio <nombre>`
+- ** Control de Volumen Global** — Slider en la web y comando `!volume` en Mumble (0–200%)
+- ** Panel de Configuración Web** — Cambia servidor, usuario, admins... sin tocar ningún archivo
+- ** Auto-Setup** — Descarga `yt-dlp` y `ffmpeg` automáticamente en la primera ejecución
+- ** Sin Terminal Visible** — En Windows el bot corre completamente en segundo plano
 
 ---
 
