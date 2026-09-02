@@ -1,5 +1,8 @@
 <div align="center">
   <h1>🎵 MumbleBeats</h1>
+  <p align="center">
+  <img src="logo.svg" alt="MumbleBeats Logo" width="600">
+</p>
   <p><strong>El Bot de Música de Nueva Generación para Mumble</strong></p>
   <p>
     <a href="https://github.com/Osas34091/MumbleBeats/releases/latest"><img alt="Latest Release" src="https://img.shields.io/github/v/release/Osas34091/MumbleBeats?style=flat-square&color=7c3aed"></a>
