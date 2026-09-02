@@ -160,7 +160,11 @@ func (p *Player) PlayDirectStream(ctx context.Context, streamURL string) error {
 	exeFFmpeg := ResolveExecutable("ffmpeg")
 	
 	// Argumentos para FFmpeg: leer de la URL, formato s16le, 48000Hz, MONO (gumble solo soporta 1 canal)
+	// Añadimos flags de reconexión para evitar que YouTube corte el stream a la mitad (Error -10054)
 	cmdFFmpeg := exec.CommandContext(ctx, exeFFmpeg,
+		"-reconnect", "1",
+		"-reconnect_streamed", "1",
+		"-reconnect_delay_max", "5",
 		"-i", streamURL,
 		"-ac", "1",
 		"-ar", "48000",
