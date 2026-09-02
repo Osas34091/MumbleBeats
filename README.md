@@ -1,68 +1,92 @@
 <div align="center">
   <h1>🎵 MumbleBeats</h1>
-  <p><strong>El Bot de Música de Nueva Generación para Mumble (Baja Latencia + Estéreo Real)</strong></p>
+  <p><strong>El Bot de Música de Nueva Generación para Mumble</strong></p>
+  <p>
+    <a href="https://github.com/Osas34091/MumbleBeats/releases/latest"><img alt="Latest Release" src="https://img.shields.io/github/v/release/Osas34091/MumbleBeats?style=flat-square&color=7c3aed"></a>
+    <a href="https://github.com/Osas34091/MumbleBeats/actions"><img alt="Build Status" src="https://img.shields.io/github/actions/workflow/status/Osas34091/MumbleBeats/release.yml?style=flat-square"></a>
+    <img alt="Go" src="https://img.shields.io/badge/Go-1.22-00ADD8?style=flat-square&logo=go">
+    <img alt="React" src="https://img.shields.io/badge/React-Vite-61DAFB?style=flat-square&logo=react">
+    <img alt="Platform" src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey?style=flat-square">
+  </p>
 </div>
 
-MumbleBeats es un bot de música moderno, modular y reactivo para servidores Mumble, escrito completamente en Go y React. Transforma tu servidor en un Spotify colaborativo con filtros de audio en vivo, reproducción estéreo y un dashboard de control web espectacular.
+MumbleBeats es un bot de música moderno y auto-contenido para servidores **Mumble**, escrito en Go con un panel de control web en React. Un solo archivo ejecutable — sin instaladores, sin dependencias manuales.
 
 ---
 
-## ✨ Características Principales
+## ✨ Características
 
-* **🎧 Estéreo Real y Baja Latencia**: Procesamiento nativo en estéreo a través del códec Opus con una tasa perfecta de sincronización de frames (20ms) gracias al motor de inyección directa desde FFmpeg a Gumble.
-* **⚡ Dashboard en Tiempo Real (Web UI)**: Controla la música desde tu navegador con una interfaz hermosa, reactiva y fluida sincronizada vía WebSockets.
-* **🎛️ Filtros DSP y Control Pro**: ¿Quieres escuchar música en modo *Nightcore*? ¿Aumentar el *Bass*? ¿Cambiar la velocidad a 1.25x? Hazlo todo en vivo sin detener la canción, gracias al "hot-swapping" de FFmpeg.
-* **📻 Radio Inteligente**: Integración nativa con `radio-browser.info`. Usa `!radio <nombre>` para buscar estaciones de todo el mundo.
-* **🤖 Auto-Setup Inteligente**: No necesitas instalar `yt-dlp` ni dependencias pesadas manualmente. El bot detecta tu sistema operativo (Windows, Mac o Linux) y los descarga automáticamente en su primera ejecución.
+- **🎧 Audio Estéreo en Tiempo Real** — Opus a 48kHz vía FFmpeg → Gumble, latencia de ~10ms
+- **⚡ Dashboard Web Reactivo** — Control total desde el navegador, sincronizado en tiempo real con WebSockets
+- **🎛️ Filtros DSP en Vivo** — Nightcore, Bass Boost, Echo, sin interrumpir la canción (hot-swap FFmpeg)
+- **📻 Radio en Directo** — Integración con `radio-browser.info` via `!radio <nombre>`
+- **🔊 Control de Volumen Global** — Slider en la web y comando `!volume` en Mumble (0–200%)
+- **⚙️ Panel de Configuración Web** — Cambia servidor, usuario, admins... sin tocar ningún archivo
+- **🤖 Auto-Setup** — Descarga `yt-dlp` y `ffmpeg` automáticamente en la primera ejecución
+- **🚫 Sin Terminal Visible** — En Windows el bot corre completamente en segundo plano
 
-## 🚀 Instalación y Uso (¡Facilísimo!)
+---
 
-Gracias a la compilación en Go, **no necesitas instalar Node.js, ni Python, ni compilar nada**.
+## 🚀 Instalación (¡Menos de 1 minuto!)
 
-1. Ve a la sección de [Releases](https://github.com/tu-usuario/MumbleBeats/releases) de este repositorio.
-2. Descarga el ejecutable para tu sistema operativo (`.exe` para Windows, o el binario de Linux/Mac).
-3. Colócalo en una carpeta y **haz doble clic** (o ejecútalo en la terminal).
+1. Ve a **[Releases](https://github.com/Osas34091/MumbleBeats/releases/latest)** y descarga el ejecutable para tu sistema:
+   - `mumblebeats-windows-amd64.exe` → Windows
+   - `mumblebeats-linux-amd64` → Linux
+   - `mumblebeats-macos-arm64` → macOS Apple Silicon (M1/M2/M3)
+   - `mumblebeats-macos-amd64` → macOS Intel
 
-El bot descargará automáticamente sus dependencias de audio la primera vez, se conectará al servidor de Mumble por defecto y levantará el Panel de Control Web.
+2. **Colócalo en una carpeta vacía** y ejecútalo (doble clic en Windows, `./mumblebeats-...` en terminal en Linux/macOS).
 
-> **Nota:** Por defecto, el panel web estará disponible en `http://localhost:8080`.
+3. Abre tu navegador en **`http://localhost:8080`** y configura el servidor Mumble desde la pestaña **⚙️ Configuración**.
 
-## 💬 Comandos Disponibles en Mumble
+> El bot descargará `yt-dlp` y `ffmpeg` automáticamente la primera vez (~50MB). En Windows no verás ninguna ventana negra.
 
-MumbleBeats incluye un sistema de comandos súper intuitivo. Sólo escribe en el chat de tu canal:
+---
 
-* `!play <búsqueda/url>` (o `!p`): Añade una canción de YouTube. Si pones una playlist de YT entera, ¡las añade todas!
-* `!queue` (o `!q`): Muestra la cola actual.
-* `!skip` / `!pause` / `!resume` / `!stop` / `!clear`: Controles básicos.
-* `!seek <segundos>`: Salta a un segundo específico de la canción (Ej: `!seek 60`).
-* `!speed <valor>`: Cambia la velocidad (Ej: `!speed 1.25`).
-* `!filter <nombre>`: Aplica filtros de audio (`nightcore`, `bassboost`, `echo`, `off`).
-* `!lyrics` (o `!letra`): Muestra la letra de la canción que está sonando.
-* `!radio <búsqueda/url>`: Busca y reproduce estaciones de radio en vivo.
-* `!playlist <nombre>`: Carga una playlist que hayas guardado previamente en el Dashboard.
-* `!help`: Muestra la lista completa de comandos en vivo.
+## 💬 Comandos de Mumble
 
-## 🛠️ Para Desarrolladores
+| Comando | Alias | Descripción |
+|---------|-------|-------------|
+| `!play <búsqueda/url>` | `!p` | Añade una canción de YouTube |
+| `!queue` | `!q` | Muestra la cola actual |
+| `!now` | `!np` | Canción actual con progreso |
+| `!skip` | `!s` | Salta la canción actual |
+| `!pause` / `!resume` | — | Pausa / Reanuda |
+| `!stop` | — | Para la música y limpia la cola |
+| `!volume <0-200>` | `!v`, `!vol` | Ajusta el volumen global |
+| `!filter <nombre>` | — | Filtros: `nightcore`, `bassboost`, `echo`, `off` |
+| `!speed <0.5-2.0>` | — | Cambia la velocidad de reproducción |
+| `!seek <segundos>` | — | Salta a un punto de la canción |
+| `!radio <búsqueda>` | — | Reproduce una radio en directo |
+| `!playlist <nombre>` | — | Carga una playlist guardada |
+| `!playlocal <archivo>` | — | Reproduce un archivo de la carpeta `music/` |
+| `!help` | `!h` | Muestra todos los comandos |
 
-Si quieres compilarlo desde cero o modificar el código fuente:
+> Los comandos de control (skip, pause, stop...) solo los pueden usar los usuarios en la lista `admins` de la configuración.
+
+---
+
+## 🛠️ Compilar desde el código fuente
 
 ```bash
-# 1. Clona el repositorio
-git clone https://github.com/tu-usuario/MumbleBeats.git
+# Requisitos: Go 1.22+, Node.js 18+
+
+git clone https://github.com/Osas34091/MumbleBeats.git
 cd MumbleBeats
 
-# 2. Construye la aplicación Web (Requiere Node.js)
-cd web
-npm install
-npm run build
-cd ..
+# 1. Build del frontend
+cd web && npm ci && npm run build && cd ..
 
-# 3. Compila el Bot (Requiere Go)
-go build -o bot.exe ./cmd/bot
+# 2. Build del bot
+# Windows (sin consola):
+go build -ldflags "-H=windowsgui -s -w" -o mumblebeats.exe ./cmd/bot
 
-# 4. Ejecuta el Bot
-./bot.exe
+# Linux / macOS:
+go build -ldflags "-s -w" -o mumblebeats ./cmd/bot
 ```
 
+---
+
 ## 📜 Licencia
-Este proyecto es libre y de código abierto. ¡Siéntete libre de contribuir!
+
+Este proyecto es libre y de código abierto bajo la licencia MIT. ¡Siéntete libre de contribuir!
