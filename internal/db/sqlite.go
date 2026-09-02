@@ -31,6 +31,9 @@ func InitDB(filepath string) error {
 	if err != nil {
 		return fmt.Errorf("error conectando a sqlite: %w", err)
 	}
+	
+	// Prevenir error SQLITE_BUSY forzando a que sqlite trabaje en serie
+	DB.SetMaxOpenConns(1)
 
 	// Crear tabla de cola si no existe
 	schema := `

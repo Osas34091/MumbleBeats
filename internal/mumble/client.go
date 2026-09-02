@@ -207,7 +207,7 @@ func (b *BotClient) Connect() error {
 					msg := "<b>Siguientes canciones en cola:</b><br><br><table style=\"border-spacing: 0 5px;\">"
 					for i, t := range tracks {
 						imgTag := ""
-						if i == 0 && t.Thumbnail != "" {
+						if t.Thumbnail != "" {
 							imgBase64 := audio.GetThumbnailBase64(t.Thumbnail, "default")
 							if imgBase64 != "" {
 								imgTag = fmt.Sprintf(`<img src="%s" height="40" style="vertical-align: middle; border-radius: 4px;" />`, imgBase64)

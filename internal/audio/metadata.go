@@ -191,11 +191,12 @@ func GetThumbnailBase64(url, sizeVariant string) string {
 	thumb := url
 	thumb = strings.ReplaceAll(thumb, ".webp", ".jpg")
 	thumb = strings.ReplaceAll(thumb, "vi_webp", "vi")
-	if sizeVariant != "" {
-		thumb = strings.ReplaceAll(thumb, "maxresdefault", sizeVariant)
-		thumb = strings.ReplaceAll(thumb, "sddefault", sizeVariant)
-		thumb = strings.ReplaceAll(thumb, "hqdefault", sizeVariant)
-	}
+	
+	// Eliminar bordes negros forzando mqdefault (16:9)
+	thumb = strings.ReplaceAll(thumb, "maxresdefault", "mqdefault")
+	thumb = strings.ReplaceAll(thumb, "sddefault", "mqdefault")
+	thumb = strings.ReplaceAll(thumb, "hqdefault", "mqdefault")
+	thumb = strings.ReplaceAll(thumb, "default", "mqdefault")
 
 	client := &http.Client{Timeout: 3 * time.Second}
 	resp, err := client.Get(thumb)
