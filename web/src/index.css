@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary-500: #8b5cf6; /* Violeta vibrante */
+  --color-primary-600: #7c3aed;
+  --color-bg-dark: #0f172a; /* Slate 900 */
+  --color-bg-card: rgba(30, 41, 59, 0.7); /* Slate 800 translúcido */
+}
+
+@layer base {
+  body {
+    @apply bg-slate-900 text-white min-h-screen font-sans antialiased;
+    background-image: radial-gradient(circle at top right, rgba(139, 92, 246, 0.15), transparent 40%),
+                      radial-gradient(circle at bottom left, rgba(56, 189, 248, 0.1), transparent 40%);
+  }
+}
+
+/* Glassmorphism utilities */
+@layer utilities {
+  .glass-panel {
+    @apply bg-slate-800/60 backdrop-blur-md border border-slate-700/50 shadow-xl;
+  }
+}

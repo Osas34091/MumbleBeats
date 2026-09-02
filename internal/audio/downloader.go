@@ -7,9 +7,33 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
+
+	"github.com/schollz/progressbar/v3"
 )
+
+// ResolveExecutable busca el ejecutable en el PATH o en la carpeta local de forma segura
+func ResolveExecutable(base string) string {
+	exeName := getExeName(base)
+
+	// Si está en el PATH, LookPath devuelve la ruta absoluta o el nombre.
+	if path, err := exec.LookPath(exeName); err == nil {
+		if filepath.IsAbs(path) {
+			return path
+		}
+	}
+
+	// Si está en la carpeta local
+	if _, err := os.Stat(exeName); err == nil {
+		if abs, err := filepath.Abs(exeName); err == nil {
+			return abs
+		}
+	}
+
+	return exeName
+}
 
 // EnsureDependencies checks if yt-dlp and ffmpeg exist.
 // If they don't, it downloads the correct binaries for the current OS.
@@ -36,12 +60,20 @@ func getExeName(base string) string {
 
 func ensureYtDlp(ctx context.Context) error {
 	exeName := getExeName("yt-dlp")
+	
+	// 1. Verificar en PATH
+	if _, err := exec.LookPath(exeName); err == nil {
+		fmt.Printf("✅ yt-dlp detectado en el sistema.\n")
+		return nil
+	}
+	
+	// 2. Verificar en carpeta actual
 	if _, err := os.Stat(exeName); err == nil {
-		fmt.Printf("%s ya está instalado.\n", exeName)
-		return nil // File exists
+		fmt.Printf("✅ yt-dlp detectado en la carpeta actual.\n")
+		return nil
 	}
 
-	fmt.Printf("Descargando %s...\n", exeName)
+	fmt.Printf("⏳ Descargando %s (Requerido para leer audio de internet)...\n", exeName)
 
 	var downloadURL string
 	switch runtime.GOOS {
@@ -60,14 +92,21 @@ func ensureYtDlp(ctx context.Context) error {
 
 func ensureFFmpeg(ctx context.Context) error {
 	exeName := getExeName("ffmpeg")
-	if _, err := os.Stat(exeName); err == nil {
-		fmt.Printf("%s ya está instalado.\n", exeName)
+	
+	// 1. Verificar en PATH (muy común que los usuarios ya lo tengan)
+	if _, err := exec.LookPath(exeName); err == nil {
+		fmt.Printf("✅ ffmpeg detectado en el sistema.\n")
 		return nil
 	}
 
-	fmt.Printf("Descargando %s...\n", exeName)
+	// 2. Verificar en carpeta actual
+	if _, err := os.Stat(exeName); err == nil {
+		fmt.Printf("✅ ffmpeg detectado en la carpeta actual.\n")
+		return nil
+	}
 
-	// URL simple para ffmpeg estático (usando un build genérico para win64)
+	fmt.Printf("⏳ Descargando %s (Esto puede tardar unos minutos)...\n", exeName)
+
 	var downloadURL string
 	switch runtime.GOOS {
 	case "windows":
@@ -75,7 +114,6 @@ func ensureFFmpeg(ctx context.Context) error {
 		return downloadAndExtractFFmpegWin(ctx, downloadURL, exeName)
 	case "linux":
 		downloadURL = "https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz"
-		// TODO: Implementar extracción de tar.xz para linux
 		return fmt.Errorf("auto-download para linux no implementado aún")
 	default:
 		return fmt.Errorf("unsupported os para auto-descarga de ffmpeg")
@@ -104,7 +142,14 @@ func downloadFile(ctx context.Context, url string, filepath string) error {
 	}
 	defer out.Close()
 
-	_, err = io.Copy(out, resp.Body)
+	// Crear barra de progreso
+	bar := progressbar.DefaultBytes(
+		resp.ContentLength,
+		"Descargando",
+	)
+
+	// Escribir al archivo y a la barra al mismo tiempo
+	_, err = io.Copy(io.MultiWriter(out, bar), resp.Body)
 	if err != nil {
 		return err
 	}
@@ -126,6 +171,8 @@ func downloadAndExtractFFmpegWin(ctx context.Context, url string, exeName string
 		return err
 	}
 	defer os.Remove(zipPath)
+
+	fmt.Println("\nExtraendo ffmpeg.exe (por favor espera)...")
 
 	r, err := zip.OpenReader(zipPath)
 	if err != nil {
@@ -151,7 +198,7 @@ func downloadAndExtractFFmpegWin(ctx context.Context, url string, exeName string
 			if err != nil {
 				return err
 			}
-			fmt.Println("ffmpeg extraído exitosamente.")
+			fmt.Println("✅ ffmpeg extraído exitosamente.")
 			return nil
 		}
 	}

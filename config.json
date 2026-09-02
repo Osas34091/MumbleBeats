@@ -1,0 +1,9 @@
+{
+  "server_address": "ocvac.net",
+  "server_port": "64738",
+  "username": "MumbleBeats",
+  "password": "",
+  "channel": "Root",
+  "insecure": true,
+  "admins": ["Netrox"]
+}
