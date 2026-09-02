@@ -24,7 +24,6 @@ MumbleBeats is a modern, self-contained music bot for **Mumble** servers, writte
 - **Global Volume Control** — Web slider and `!volume` command in Mumble (0–200%)
 - **Web Configuration Panel** — Change server, username, admins... without touching any files
 - **Auto-Setup** — Automatically downloads `yt-dlp` and `ffmpeg` on first run
-- **No Visible Terminal** — On Windows, the bot runs completely in the background
 
 ---
 
