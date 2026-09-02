@@ -4,6 +4,8 @@
 </p>
   <p><strong>The Next-Generation Music Bot for Mumble</strong></p>
   <p>
+    <a href="https://github.com/Osas34091/MumbleBeats/releases/latest"><img alt="Latest Release" src="https://img.shields.io/github/v/release/Osas34091/MumbleBeats?style=flat-square&color=7c3aed"></a>
+    <a href="https://github.com/Osas34091/MumbleBeats/actions"><img alt="Build Status" src="https://img.shields.io/github/actions/workflow/status/Osas34091/MumbleBeats/release.yml?style=flat-square"></a>
     <img alt="Go" src="https://img.shields.io/badge/Go-1.22-00ADD8?style=flat-square&logo=go">
     <img alt="React" src="https://img.shields.io/badge/React-Vite-61DAFB?style=flat-square&logo=react">
     <img alt="Platform" src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey?style=flat-square">
