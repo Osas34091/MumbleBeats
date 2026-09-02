@@ -4,6 +4,10 @@ on:
   release:
     types: [created]
 
+# Permisos necesarios para subir assets a la release
+permissions:
+  contents: write
+
 jobs:
   # ─────────────────────────────────────────────
   #  BUILD WEB UI (once, shared as artifact)
@@ -16,7 +20,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
           cache-dependency-path: web/package-lock.json
 
@@ -61,8 +65,6 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: mumblebeats-windows-amd64.exe
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   # ─────────────────────────────────────────────
   #  LINUX (amd64)
@@ -94,8 +96,6 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: mumblebeats-linux-amd64
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   # ─────────────────────────────────────────────
   #  macOS ARM64 (Apple Silicon M1/M2/M3)
@@ -127,8 +127,6 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: mumblebeats-macos-arm64
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   # ─────────────────────────────────────────────
   #  macOS AMD64 (Intel)
@@ -160,5 +158,3 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: mumblebeats-macos-amd64
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
