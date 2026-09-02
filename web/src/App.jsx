@@ -364,9 +364,12 @@ function App() {
           </div>
           
           {/* Upload MP3 */}
-          <div className="glass-panel rounded-2xl p-6 relative mt-6">
-            <h2 className="text-sm font-bold text-slate-400 tracking-widest uppercase mb-4 flex items-center gap-2">
-              <ListMusic size={16} /> Subir MP3 Local
+          <div className="glass-panel rounded-2xl p-6 relative mt-6 border border-primary-500/30 shadow-[0_0_15px_rgba(14,165,233,0.1)]">
+            <h2 className="text-sm font-bold text-slate-300 tracking-widest uppercase mb-4 flex items-center gap-2">
+              <div className="bg-primary-500/20 p-1.5 rounded-lg text-primary-400">
+                <ListMusic size={16} />
+              </div>
+              Subir MP3 Local
             </h2>
             <div className="flex gap-2 mb-2">
               <input
@@ -394,7 +397,7 @@ function App() {
                     e.target.value = '';
                     document.getElementById('upload-label-text').innerText = '¡Subido con éxito!';
                     setTimeout(() => {
-                      document.getElementById('upload-label-text').innerText = 'Haz clic para seleccionar un archivo (.mp3, .m4a)';
+                      document.getElementById('upload-label-text').innerText = 'Haz clic para seleccionar otro archivo (.mp3, .m4a)';
                     }, 3000);
                   } catch (err) {
                     console.error('Error uploading:', err);
@@ -407,12 +410,17 @@ function App() {
               <label 
                 id="upload-label"
                 htmlFor="file-upload" 
-                className={`flex-1 bg-slate-800/50 border border-dashed border-slate-700/50 rounded-xl py-4 px-4 text-center text-slate-400 cursor-pointer hover:bg-slate-800 transition-colors text-sm ${isLoading ? 'opacity-50 pointer-events-none' : ''}`}
+                className={`flex-1 bg-primary-900/20 border-2 border-dashed border-primary-500/40 hover:border-primary-400 rounded-xl py-6 px-4 text-center cursor-pointer hover:bg-primary-900/40 transition-all text-sm group ${isLoading ? 'opacity-50 pointer-events-none' : ''}`}
               >
-                <span id="upload-label-text">Haz clic para seleccionar un archivo (.mp3, .m4a)</span>
+                <div className="flex flex-col items-center justify-center gap-2">
+                  <div className="p-3 rounded-full bg-primary-500/20 text-primary-400 group-hover:scale-110 group-hover:bg-primary-500 group-hover:text-white transition-all">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                  </div>
+                  <span id="upload-label-text" className="text-primary-200 font-medium">Haz clic aquí para seleccionar un archivo (.mp3, .m4a)</span>
+                </div>
               </label>
             </div>
-            <p className="text-xs text-slate-500 text-center">Una vez subido, puedes reproducirlo usando el buscador de arriba.</p>
+            <p className="text-xs text-slate-400 text-center mt-3">Una vez subido, búscalo por su nombre en la barra de búsqueda de arriba.</p>
           </div>
           
         </div>
