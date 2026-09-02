@@ -22,6 +22,14 @@ function App() {
     } catch(err) {}
   }
 
+  useEffect(() => {
+    const firstRun = localStorage.getItem('mumblebeats_first_run');
+    if (!firstRun) {
+      setActiveTab('settings');
+      localStorage.setItem('mumblebeats_first_run', 'false');
+    }
+  }, []);
+
   const fetchPlaylists = async () => {
     try {
       const res = await fetch('/api/playlists')

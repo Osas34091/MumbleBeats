@@ -8,7 +8,7 @@ import (
 )
 
 // StartQueueWorker inicia un bucle infinito en segundo plano que vigila la cola
-func StartQueueWorker(player *Player) {
+func StartQueueWorker(getPlayer func() *Player) {
 	go func() {
 		for {
 			// Buscar la siguiente canción en la cola
@@ -19,8 +19,9 @@ func StartQueueWorker(player *Player) {
 				continue
 			}
 
-			// Si no hay canciones, esperamos un poco y volvemos a comprobar
-			if track == nil {
+			player := getPlayer()
+			// Si no hay canciones o no hay player activo, esperamos un poco y volvemos a comprobar
+			if track == nil || player == nil {
 				time.Sleep(1 * time.Second)
 				continue
 			}

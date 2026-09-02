@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/exec"
 	"os/signal"
+	"runtime"
 	"syscall"
 	"time"
 
@@ -56,24 +58,15 @@ func main() {
 		fmt.Println("Dependencias listas.")
 	}
 
-	// 3. Conectar a Mumble
-	fmt.Println("Conectando al servidor de Mumble...")
+	// 3. Crear cliente de Mumble
 	botClient := mumble.NewBotClient(cfg)
-	if err := botClient.Connect(); err != nil {
-		fmt.Printf("Error al conectar a Mumble: %v\n", err)
-		os.Exit(1)
-	}
 
-	// 4. Iniciar Worker de la Cola
-	fmt.Println("Iniciando el Queue Worker...")
-	audio.StartQueueWorker(botClient.Player)
-
-	// 5. Iniciar Servidor API Web
+	// 4. Iniciar Servidor API Web PRIMERO
 	fmt.Println("Iniciando API HTTP...")
 	apiServer := api.NewServer(cfg, botClient)
 	
 	// Enganchar el reproductor con los WebSockets
-	botClient.Player.OnStateChange = func() {
+	botClient.OnStateChange = func() {
 		apiServer.Hub.Broadcast(apiServer.GetState())
 	}
 	
@@ -82,14 +75,45 @@ func main() {
 			fmt.Printf("Error en Servidor HTTP: %v\n", err)
 		}
 	}()
+	
+	// Abrir navegador automáticamente
+	openBrowser("http://localhost:8080")
 
-	// 5. Mantener vivo el programa hasta que se reciba una señal de salida (Ctrl+C)
+	// 5. Iniciar Worker de la Cola dinámicamente
+	fmt.Println("Iniciando el Queue Worker...")
+	audio.StartQueueWorker(func() *audio.Player {
+		return botClient.Player
+	})
+
+	// 6. Conectar a Mumble (No bloqueante / No exit fatal si falla)
+	fmt.Println("Conectando al servidor de Mumble...")
+	go func() {
+		if err := botClient.Connect(); err != nil {
+			fmt.Printf("ADVERTENCIA: Error al conectar a Mumble: %v\n", err)
+			fmt.Println("Por favor, verifica la configuración en el panel web (http://localhost:8080).")
+		}
+	}()
+
+	// 7. Mantener vivo el programa hasta que se reciba una señal de salida (Ctrl+C)
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
 	<-sig
 
 	fmt.Println("\nApagando MumbleBeats...")
-	if botClient.Client != nil {
-		botClient.Client.Disconnect()
+	botClient.Disconnect()
+}
+
+func openBrowser(url string) {
+	var err error
+	switch runtime.GOOS {
+	case "linux":
+		err = exec.Command("xdg-open", url).Start()
+	case "windows":
+		err = exec.Command("rundll32", "url.dll,FileProtocolHandler", url).Start()
+	case "darwin":
+		err = exec.Command("open", url).Start()
+	}
+	if err != nil {
+		fmt.Printf("No se pudo abrir el navegador automáticamente: %v\n", err)
 	}
 }
