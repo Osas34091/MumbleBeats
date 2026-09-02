@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -149,7 +150,33 @@ func (s *Server) handlePlay(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	
-	metadata, err := audio.FetchMetadata(req.Query)
+	query := req.Query
+	
+	// 1. Es una URL?
+	isURL := strings.HasPrefix(query, "http://") || strings.HasPrefix(query, "https://")
+	
+	// 2. Si no es URL, buscar en archivos locales primero
+	if !isURL {
+		foundPath, foundName, err := db.FindLocalFile(query)
+		if err == nil {
+			// Encontrado localmente!
+			id, addErr := db.AddTrack(foundName, foundPath, "local", "Dashboard", "")
+			if addErr != nil {
+				http.Error(w, addErr.Error(), http.StatusInternalServerError)
+				return
+			}
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"success": true,
+				"id":      id,
+				"track":   foundName,
+			})
+			return
+		}
+	}
+	
+	// 3. Fallback: yt-dlp (URL o Búsqueda en YouTube)
+	metadata, err := audio.FetchMetadata(query)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

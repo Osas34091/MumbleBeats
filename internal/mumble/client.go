@@ -117,6 +117,24 @@ func (b *BotClient) Connect() error {
 						e.Sender.Send("Todas las canciones de la playlist han sido añadidas.")
 						return
 					}
+					
+					// 1. Es una URL?
+					isURL := strings.HasPrefix(query, "http://") || strings.HasPrefix(query, "https://")
+					
+					// 2. Si no es URL, buscar en archivos locales primero
+					if !isURL {
+						foundPath, foundName, errLocal := db.FindLocalFile(query)
+						if errLocal == nil {
+							// Encontrado localmente!
+							id, err := db.AddTrack(foundName, foundPath, "local", senderName, "")
+							if err != nil {
+								e.Sender.Send(fmt.Sprintf("Error añadiendo a la cola: %v", err))
+							} else {
+								e.Sender.Send(fmt.Sprintf("'%s' añadido a la cola (ID: %d)", foundName, id))
+							}
+							return
+						}
+					}
 
 					metadata, err := audio.FetchMetadata(query)
 					if err != nil {
