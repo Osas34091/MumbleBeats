@@ -22,6 +22,13 @@ function App() {
     } catch(err) {}
   }
 
+  useEffect(() => {
+    const firstRun = localStorage.getItem('mumblebeats_first_run');
+    if (!firstRun) {
+      setActiveTab('settings');
+      localStorage.setItem('mumblebeats_first_run', 'false');
+    }
+  }, []);
 
   const fetchPlaylists = async () => {
     try {
@@ -644,6 +651,7 @@ function App() {
           <Settings size={24} className="text-primary-400" />
           Ajustes del Servidor
         </h2>
+        {Object.keys(config).length > 0 ? (
         <form onSubmit={async (e) => {
           e.preventDefault()
           setIsLoading(true)
@@ -710,6 +718,11 @@ function App() {
             <Save size={20} /> Guardar Cambios
           </button>
         </form>
+        ) : (
+          <div className="flex justify-center items-center py-12 text-slate-400">
+            Cargando configuración...
+          </div>
+        )}
       </div>
       )}
       
