@@ -6,19 +6,20 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
-	"io"
 	"os/exec"
+	"strings"
 	"sync/atomic"
 	"time"
 
 	"mumblebeats/internal/db"
+	"mumblebeats/internal/utils"
 
 	"layeh.com/gumble/gumble"
 )
 
 type Player struct {
 	client       *gumble.Client
-	cancel       context.CancelFunc
+	cancel       context.CancelFunc // Cancela la canción entera
 	duckingCount atomic.Int32
 	BaseVolume   float32
 	DuckingVol   float32
@@ -26,20 +27,25 @@ type Player struct {
 	// Control de Reproducción
 	CurrentTrack *db.Track
 	StreamURL    string
-	StartTime    time.Duration
 	Position     time.Duration
 	Speed        float32
 	IsPaused     bool
+	
+	// Filtros y Seek
+	Filter       string
+	SeekOffset   int // en segundos
+	restartChan  chan struct{} // Señal para reiniciar ffmpeg
 	
 	OnStateChange func() // Callback para notificar cambios (WebSockets)
 }
 
 func NewPlayer(client *gumble.Client) *Player {
 	return &Player{
-		client:     client,
-		BaseVolume: 1.0,
-		DuckingVol: 0.2, // 20% volume when ducking
-		Speed:      1.0,
+		client:      client,
+		BaseVolume:  1.0,
+		DuckingVol:  0.2, // 20% volume when ducking
+		Speed:       1.0,
+		restartChan: make(chan struct{}, 1),
 	}
 }
 
@@ -48,7 +54,11 @@ func (p *Player) PlayURL(track *db.Track) error {
 	p.Stop() // Detener lo que esté sonando
 	
 	p.CurrentTrack = track
+	p.IsPaused = false
 	p.Position = 0
+	p.SeekOffset = 0 // Resetear seek
+	p.Filter = "off" // Resetear filtro
+	p.Speed = 1.0    // Resetear velocidad
 	p.IsPaused = false
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -60,6 +70,7 @@ func (p *Player) PlayURL(track *db.Track) error {
 
 	// Obtener la mejor URL de audio y metadata en formato JSON, ignorando playlists
 	cmdYt := exec.CommandContext(ctx, exeYtDlp, "--no-playlist", "-J", "-f", "bestaudio", track.URL)
+	utils.HideWindow(cmdYt) // Ocultar la ventana de consola en Windows
 	var out bytes.Buffer
 	var errOut bytes.Buffer
 	cmdYt.Stdout = &out
@@ -158,98 +169,180 @@ func (p *Player) PlayLocal(track *db.Track) error {
 // PlayDirectStream lanza ffmpeg y envía el audio a Mumble
 func (p *Player) PlayDirectStream(ctx context.Context, streamURL string) error {
 	exeFFmpeg := ResolveExecutable("ffmpeg")
-	
-	// Argumentos para FFmpeg: leer de la URL, formato s16le, 48000Hz, MONO (gumble solo soporta 1 canal)
-	// Añadimos flags de reconexión para evitar que YouTube corte el stream a la mitad (Error -10054)
-	cmdFFmpeg := exec.CommandContext(ctx, exeFFmpeg,
-		"-reconnect", "1",
-		"-reconnect_streamed", "1",
-		"-reconnect_delay_max", "5",
-		"-i", streamURL,
-		"-ac", "1",
-		"-ar", "48000",
-		"-f", "s16le",
-		"pipe:1",
-	)
-
-	var errOut bytes.Buffer
-	cmdFFmpeg.Stderr = &errOut
-
-	stdout, err := cmdFFmpeg.StdoutPipe()
-	if err != nil {
-		return err
-	}
-
-	if err := cmdFFmpeg.Start(); err != nil {
-		return fmt.Errorf("error iniciando ffmpeg: %v, stderr: %s", err, errOut.String())
-	}
-
-	outChan := p.client.AudioOutgoing()
-
-	defer cmdFFmpeg.Wait()
-
-	// Leer frames de 10ms (480 samples por canal, 1 canal = 480 totales = 960 bytes)
-	// gumble usa 10ms por defecto y 1 canal (Mono).
-	bufferSize := 480
-	
-	// Ticker exacto a 10ms
-	ticker := time.NewTicker(10 * time.Millisecond)
-	defer ticker.Stop()
 
 	for {
-		intBuf := make(gumble.AudioBuffer, bufferSize)
-		
+		// Drenar el canal de reinicio por si acaso
 		select {
-		case <-ctx.Done():
-			return nil // Detenido manualmente
-		case <-ticker.C:
-			// Si está pausado, no leemos de ffmpeg ni escribimos a mumble
-			if p.IsPaused {
-				continue
-			}
-
-			// Leer binario directamente al slice de int16
-			err := binary.Read(stdout, binary.LittleEndian, &intBuf)
-			if err != nil {
-				if err == io.EOF || err == io.ErrUnexpectedEOF {
-					stderrStr := errOut.String()
-					if stderrStr != "" {
-						fmt.Printf("FFmpeg finalizó. Stderr: %s\n", stderrStr)
-					} else {
-						fmt.Println("Fin de la canción (EOF normal).")
-					}
-				} else {
-					fmt.Printf("Error leyendo FFmpeg: %v\n", err)
-				}
-				return nil
-			}
-
-			// Actualizar posición (10ms transcurridos en tiempo real de audio, ajustado por velocidad)
-			// Ya que leemos 10ms cada vez
-			p.Position += time.Duration(10 * float32(time.Millisecond) * p.Speed)
-			
-			// Notificar cambio de estado cada ~1 segundo (100 iteraciones de 10ms)
-			if int(p.Position.Milliseconds()/10)%100 == 0 {
-				if p.OnStateChange != nil {
-					p.OnStateChange()
-				}
-			}
-
-			// Aplicar Ducking y Volumen Base
-			vol := p.BaseVolume
-			if p.duckingCount.Load() > 0 {
-				vol *= p.DuckingVol
-			}
-			if vol != 1.0 {
-				for i := range intBuf {
-					intBuf[i] = int16(float32(intBuf[i]) * vol)
-				}
-			}
-
-			// Escribir a Mumble
-			outChan <- intBuf
+		case <-p.restartChan:
+		default:
 		}
+
+		args := []string{
+			"-reconnect", "1",
+			"-reconnect_streamed", "1",
+			"-reconnect_delay_max", "5",
+		}
+		
+		if p.SeekOffset > 0 {
+			args = append(args, "-ss", fmt.Sprintf("%d", p.SeekOffset))
+		}
+		
+		args = append(args, "-i", streamURL)
+		
+		// Construir filtros de audio
+		var filters []string
+		
+		if p.Speed != 1.0 {
+			filters = append(filters, fmt.Sprintf("atempo=%.2f", p.Speed))
+		}
+		
+		if p.Filter != "" && p.Filter != "off" {
+			switch p.Filter {
+			case "nightcore":
+				filters = append(filters, "asetrate=48000*1.25,aresample=48000")
+			case "bassboost":
+				filters = append(filters, "bass=g=15:f=50:w=0.5")
+			case "echo":
+				filters = append(filters, "aecho=0.8:0.9:1000:0.3")
+			}
+		}
+		
+		if len(filters) > 0 {
+			args = append(args, "-filter:a", strings.Join(filters, ","))
+		}
+
+		args = append(args, "-ac", "2", "-ar", "48000", "-f", "s16le", "pipe:1")
+
+		cmdFFmpeg := exec.CommandContext(ctx, exeFFmpeg, args...)
+		utils.HideWindow(cmdFFmpeg)
+
+		var errOut bytes.Buffer
+		cmdFFmpeg.Stderr = &errOut
+
+		stdout, err := cmdFFmpeg.StdoutPipe()
+		if err != nil {
+			return err
+		}
+
+		if err := cmdFFmpeg.Start(); err != nil {
+			return fmt.Errorf("error iniciando ffmpeg: %v, stderr: %s", err, errOut.String())
+		}
+
+		outChan := p.client.AudioOutgoing()
+
+		// Leer frames de 10ms (480 samples por canal * 2 canales = 960)
+		bufferSize := 960
+		ticker := time.NewTicker(10 * time.Millisecond)
+		
+		restarting := false
+
+		// Loop interno de lectura de FFmpeg
+	readLoop:
+		for {
+			intBuf := make(gumble.AudioBuffer, bufferSize)
+			
+			select {
+			case <-ctx.Done():
+				ticker.Stop()
+				cmdFFmpeg.Process.Kill()
+				cmdFFmpeg.Wait()
+				return nil // Detenido manualmente (siguiente canción o stop)
+				
+			case <-p.restartChan:
+				// Petición de reinicio (Seek o Cambio de Filtro)
+				restarting = true
+				break readLoop
+				
+			case <-ticker.C:
+				if p.IsPaused {
+					continue
+				}
+
+				err := binary.Read(stdout, binary.LittleEndian, &intBuf)
+				if err != nil {
+					break readLoop // Fin del archivo o error (continuará al wait y saldrá)
+				}
+
+				p.Position += time.Duration(10 * float32(time.Millisecond) * p.Speed)
+				
+				if int(p.Position.Milliseconds()/10)%100 == 0 {
+					if p.OnStateChange != nil {
+						p.OnStateChange()
+					}
+				}
+
+				vol := p.BaseVolume
+				if p.duckingCount.Load() > 0 {
+					vol *= p.DuckingVol
+				}
+				if vol != 1.0 {
+					for i := range intBuf {
+						intBuf[i] = int16(float32(intBuf[i]) * vol)
+					}
+				}
+
+				outChan <- intBuf
+			}
+		}
+
+		ticker.Stop()
+		cmdFFmpeg.Process.Kill() // Matar el proceso anterior antes de reiniciar o salir
+		cmdFFmpeg.Wait()
+		
+		if !restarting {
+			// Si no estamos reiniciando, significa que la canción terminó
+			return nil
+		}
+		// Si estamos reiniciando, el for exterior vuelve a lanzar FFmpeg con los nuevos parámetros
 	}
+}
+
+// Métodos de Control PRO
+
+func (p *Player) Seek(seconds int) error {
+	p.SeekOffset = seconds
+	p.Position = time.Duration(seconds) * time.Second
+	
+	// Notificar reinicio
+	select {
+	case p.restartChan <- struct{}{}:
+	default:
+	}
+	
+	if p.OnStateChange != nil {
+		p.OnStateChange()
+	}
+	return nil
+}
+
+func (p *Player) SetSpeed(speed float64) error {
+	p.Speed = float32(speed)
+	
+	// Notificar reinicio
+	select {
+	case p.restartChan <- struct{}{}:
+	default:
+	}
+	
+	if p.OnStateChange != nil {
+		p.OnStateChange()
+	}
+	return nil
+}
+
+func (p *Player) ApplyFilter(filter string) error {
+	p.Filter = filter
+	
+	// Notificar reinicio
+	select {
+	case p.restartChan <- struct{}{}:
+	default:
+	}
+	
+	if p.OnStateChange != nil {
+		p.OnStateChange()
+	}
+	return nil
 }
 
 func (p *Player) Pause() {

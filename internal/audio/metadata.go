@@ -13,6 +13,8 @@ import (
 	"strings"
 	"time"
 
+	"mumblebeats/internal/utils"
+
 	"github.com/nfnt/resize"
 )
 
@@ -37,6 +39,7 @@ func FetchMetadata(query string) (*TrackMetadata, error) {
 	}
 
 	cmdYt := exec.CommandContext(ctx, exeYtDlp, "--no-playlist", "-J", "-f", "bestaudio", query)
+	utils.HideWindow(cmdYt)
 	var out bytes.Buffer
 	var errOut bytes.Buffer
 	cmdYt.Stdout = &out

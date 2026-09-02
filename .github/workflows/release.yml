@@ -1,0 +1,61 @@
+name: Release MumbleBeats
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  build:
+    name: Build and Release
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - os: windows
+            arch: amd64
+            ext: .exe
+          - os: linux
+            arch: amd64
+            ext: ""
+          - os: darwin
+            arch: arm64
+            ext: ""
+
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v3
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18
+
+    - name: Build Web UI
+      run: |
+        cd web
+        npm ci
+        npm run build
+        cd ..
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+
+    - name: Build Bot
+      env:
+        GOOS: ${{ matrix.os }}
+        GOARCH: ${{ matrix.arch }}
+      run: |
+        if [ "${{ matrix.os }}" = "windows" ]; then
+          go build -v -ldflags "-H=windowsgui" -o mumblebeats-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.ext }} ./cmd/bot
+        else
+          go build -v -o mumblebeats-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.ext }} ./cmd/bot
+        fi
+
+    - name: Upload Release Asset
+      uses: softprops/action-gh-release@v1
+      with:
+        files: mumblebeats-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.ext }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

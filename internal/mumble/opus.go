@@ -50,8 +50,8 @@ type OpusEncoder struct {
 
 // NewOpusEncoder crea un nuevo codificador Opus puro en Go
 func NewOpusEncoder() (*OpusEncoder, error) {
-	// Sample rate: 48000Hz, Canales: 1 (Mono - requerido por gumble), Aplicación: Audio
-	enc, err := opus.NewEncoder(48000, 1, opus.ApplicationAudio)
+	// Sample rate: 48000Hz, Canales: 2 (Estéreo), Aplicación: Audio
+	enc, err := opus.NewEncoder(48000, 2, opus.ApplicationAudio)
 	if err != nil {
 		return nil, err
 	}
@@ -69,9 +69,14 @@ func (e *OpusEncoder) ID() int {
 // Encode convierte PCM a Opus
 func (e *OpusEncoder) Encode(pcm []int16, frameSize, maxDataBytes int) ([]byte, error) {
 	packet := make([]byte, maxDataBytes)
-	n, err := e.encoder.Encode(pcm, frameSize, packet)
+	
+	// gumble envía frameSize = len(pcm). Para Opus estéreo (2 canales),
+	// el frame_size real por canal es la mitad del total de samples.
+	realFrameSize := len(pcm) / 2
+	
+	n, err := e.encoder.Encode(pcm, realFrameSize, packet)
 	if err != nil {
-		fmt.Printf("Error de codificación Opus: %v (frameSize=%d)\n", err, frameSize)
+		fmt.Printf("Error de codificación Opus: %v (frameSize=%d)\n", err, realFrameSize)
 		return nil, err
 	}
 	return packet[:n], nil

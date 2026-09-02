@@ -6,24 +6,24 @@ import (
 	"net"
 	"os"
 	"strings"
-	"time"
 
 	"layeh.com/gumble/gumble"
 	"layeh.com/gumble/gumbleutil"
 	"mumblebeats/internal/audio"
 	"mumblebeats/internal/config"
-	"mumblebeats/internal/db"
 )
 
 type BotClient struct {
-	Config *config.Config
-	Client *gumble.Client
-	Player *audio.Player
+	Config       *config.Config
+	Client       *gumble.Client
+	Player       *audio.Player
+	GlobalVolume float32
 }
 
 func NewBotClient(cfg *config.Config) *BotClient {
 	return &BotClient{
-		Config: cfg,
+		Config:       cfg,
+		GlobalVolume: 1.0,
 	}
 }
 
@@ -81,243 +81,27 @@ func (b *BotClient) Connect() error {
 			plainMessage := gumbleutil.PlainText(&e.TextMessage)
 			plainMessage = strings.TrimSpace(plainMessage)
 
-			if len(plainMessage) > 6 && strings.HasPrefix(plainMessage, "!play ") || len(plainMessage) > 3 && strings.HasPrefix(plainMessage, "!p ") {
-				var query string
-				if strings.HasPrefix(plainMessage, "!p ") {
-					query = strings.TrimSpace(plainMessage[3:])
-				} else {
-					query = strings.TrimSpace(plainMessage[6:])
-				}
-				e.Sender.Send("Buscando y extrayendo información...")
-				
-				// Buscar metadata en una goroutine para no bloquear
-				go func() {
-					if strings.Contains(query, "list=") || strings.Contains(query, "playlist?") {
-						tracks, err := audio.FetchPlaylist(query)
-						if err != nil {
-							e.Sender.Send(fmt.Sprintf("Error cargando playlist: %v", err))
-							return
-						}
-						e.Sender.Send(fmt.Sprintf("Playlist encontrada con %d canciones. Añadiendo a la cola...", len(tracks)))
-						for i, t := range tracks {
-							id, err := db.AddTrack(t.Title, t.WebpageURL, "youtube", senderName, t.Thumbnail)
-							if i == 0 {
-								if err == nil {
-									imgTag := ""
-									if t.Thumbnail != "" {
-										imgBase64 := audio.GetThumbnailBase64(t.Thumbnail, "mqdefault")
-										if imgBase64 != "" {
-											imgTag = fmt.Sprintf(`<br/><img src="%s" height="90" />`, imgBase64)
-										}
-									}
-									e.Sender.Send(fmt.Sprintf("Primera canción añadida a la cola (ID: %d)%s", id, imgTag))
-								}
-							}
-						}
-						e.Sender.Send("Todas las canciones de la playlist han sido añadidas.")
-						return
-					}
-					
-					// 1. Es una URL?
-					isURL := strings.HasPrefix(query, "http://") || strings.HasPrefix(query, "https://")
-					
-					// 2. Si no es URL, buscar en archivos locales primero
-					if !isURL {
-						foundPath, foundName, errLocal := db.FindLocalFile(query)
-						if errLocal == nil {
-							// Encontrado localmente!
-							id, err := db.AddTrack(foundName, foundPath, "local", senderName, "")
-							if err != nil {
-								e.Sender.Send(fmt.Sprintf("Error añadiendo a la cola: %v", err))
-							} else {
-								e.Sender.Send(fmt.Sprintf("'%s' añadido a la cola (ID: %d)", foundName, id))
-							}
-							return
-						}
-					}
-
-					metadata, err := audio.FetchMetadata(query)
-					if err != nil {
-						e.Sender.Send(fmt.Sprintf("Error buscando '%s': %v", query, err))
-						return
-					}
-
-					id, err := db.AddTrack(metadata.Title, metadata.WebpageURL, "youtube", senderName, metadata.Thumbnail)
-					if err != nil {
-						e.Sender.Send(fmt.Sprintf("Error añadiendo a la cola: %v", err))
-					} else {
-						imgTag := ""
-						if metadata.Thumbnail != "" {
-							imgBase64 := audio.GetThumbnailBase64(metadata.Thumbnail, "mqdefault")
-							if imgBase64 != "" {
-								imgTag = fmt.Sprintf(`<br/><img src="%s" height="90" />`, imgBase64)
-							}
-						}
-						e.Sender.Send(fmt.Sprintf("'%s' añadido a la cola (ID: %d)%s", metadata.Title, id, imgTag))
-					}
-				}()
-			} else if len(plainMessage) > 10 && strings.HasPrefix(plainMessage, "!playlist ") {
-				name := strings.TrimSpace(plainMessage[10:])
-				err := db.LoadPlaylist(name, senderName)
-				if err != nil {
-					e.Sender.Send(fmt.Sprintf("Error cargando playlist '%s': %v", name, err))
-				} else {
-					e.Sender.Send(fmt.Sprintf("Playlist '%s' añadida a la cola.", name))
-				}
-			} else if len(plainMessage) > 7 && strings.HasPrefix(plainMessage, "!radio ") {
-				url := strings.TrimSpace(plainMessage[7:])
-				id, err := db.AddTrack("Radio", url, "radio", senderName, "")
-				if err != nil {
-					e.Sender.Send(fmt.Sprintf("Error añadiendo radio: %v", err))
-				} else {
-					e.Sender.Send(fmt.Sprintf("Radio añadida a la cola (ID: %d)", id))
-				}
-
-			} else if len(plainMessage) > 11 && strings.HasPrefix(plainMessage, "!playlocal ") {
-				nombre := strings.TrimSpace(plainMessage[11:])
-				e.Sender.Send(fmt.Sprintf("Buscando '%s' en la biblioteca local...", nombre))
-				
-				// Buscar sincrónicamente (suele ser rápido)
-				foundPath, foundName, err := db.FindLocalFile(nombre)
-				if err != nil {
-					e.Sender.Send(fmt.Sprintf("Error: %v", err))
-				} else {
-					id, err := db.AddTrack(foundName, foundPath, "local", senderName, "")
-					if err != nil {
-						e.Sender.Send(fmt.Sprintf("Error añadiendo a la cola: %v", err))
-					} else {
-						e.Sender.Send(fmt.Sprintf("'%s' añadido a la cola (ID: %d)", foundName, id))
-					}
-				}
-
-			} else if plainMessage == "!skip" || plainMessage == "!s" {
-				if !isAdmin(b.Config.Admins, senderName) {
-					e.Sender.Send("❌ No tienes permisos de administrador para usar este comando.")
-					return
-				}
-				if b.Player != nil {
-					b.Player.Stop()
-					if e.Client.Self.Channel != nil {
-						e.Client.Self.Channel.Send(fmt.Sprintf("Canción saltada por %s.", senderName), false)
-					}
-				}
-			} else if plainMessage == "!clear" {
-				if !isAdmin(b.Config.Admins, senderName) {
-					e.Sender.Send("❌ No tienes permisos de administrador para usar este comando.")
-					return
-				}
-				err := db.ClearQueue()
-				if err != nil {
-					e.Sender.Send(fmt.Sprintf("Error limpiando la cola: %v", err))
-				} else {
-					if e.Client.Self.Channel != nil {
-						e.Client.Self.Channel.Send(fmt.Sprintf("La cola ha sido limpiada por %s.", senderName), false)
-					}
-				}
-			} else if plainMessage == "!queue" || plainMessage == "!q" {
-				go func() {
-					tracks, err := db.GetQueue(5)
-					if err != nil {
-						e.Sender.Send(fmt.Sprintf("Error obteniendo cola: %v", err))
-						return
-					}
-					if len(tracks) == 0 {
-						e.Sender.Send("La cola está vacía.")
-					} else {
-						for i, t := range tracks {
-							imgTag := ""
-							if t.Thumbnail != "" {
-								imgBase64 := audio.GetThumbnailBase64(t.Thumbnail, "default")
-								if imgBase64 != "" {
-									imgTag = fmt.Sprintf(`<br><img src="%s" height="90" style="vertical-align: middle; border-radius: 4px;" /><br>`, imgBase64)
-								}
-							}
-							
-							msg := ""
-							if i == 0 {
-								msg += "<b>Siguientes canciones en cola:</b><br><br>"
-							}
-							
-							msg += fmt.Sprintf(`<b>%d.</b> %s <span style="color: #888; font-size: 0.9em;">(por %s)</span>%s`, i+1, t.Title, t.AddedBy, imgTag)
-							e.Sender.Send(msg)
-							time.Sleep(300 * time.Millisecond) // Evita límite de spam de Mumble
-						}
-					}
-				}()
-			} else if plainMessage == "!help" || plainMessage == "!h" {
-				helpMsg := `<b>Comandos de MumbleBeats:</b><br>
-<br>
-<b>!play &lt;url/nombre&gt;</b> o <b>!p</b> - Añade una canción de YouTube (por enlace o búsqueda).<br>
-<b>!playlist &lt;nombre&gt;</b> - Carga una playlist guardada en la base de datos.<br>
-<b>!radio &lt;url&gt;</b> - Añade una transmisión de radio en directo.<br>
-<b>!playlocal &lt;nombre&gt;</b> - Añade un archivo .mp3 de la carpeta local.<br>
-<b>!queue</b> o <b>!q</b> - Muestra las siguientes 5 canciones en la cola.<br>
-<b>!now</b> o <b>!np</b> - Muestra la canción actual y su progreso.<br>
-<b>[Admins] !pause / !resume</b> - Pausa o reanuda la canción actual.<br>
-<b>[Admins] !skip</b> o <b>!s</b> - Salta la canción que está sonando actualmente.<br>
-<b>[Admins] !clear</b> - Elimina todas las canciones de la cola.<br>
-<b>[Admins] !stop</b> - Detiene la música sin limpiar la cola.<br>
-<b>!help</b> o <b>!h</b> - Muestra este mensaje de ayuda.`
-				e.Sender.Send(helpMsg)
-			} else if plainMessage == "!now" || plainMessage == "!np" {
-				go func() {
-					if b.Player != nil && b.Player.CurrentTrack != nil {
-						track := b.Player.CurrentTrack
-						pos := int(b.Player.Position.Seconds())
-						
-						estado := "▶️ Reproduciendo"
-						if b.Player.IsPaused {
-							estado = "⏸️ Pausado"
-						}
-						
-						imgTag := ""
-						if track.Thumbnail != "" {
-							imgBase64 := audio.GetThumbnailBase64(track.Thumbnail, "now")
-							if imgBase64 != "" {
-								imgTag = fmt.Sprintf(`<br/><img src="%s" height="90" />`, imgBase64)
-							}
-						}
-						
-						e.Sender.Send(fmt.Sprintf("%s ahora: <b>%s</b><br>Progreso: %02d:%02d%s", estado, track.Title, pos/60, pos%60, imgTag))
-					} else {
-						e.Sender.Send("No hay ninguna canción sonando ahora mismo.")
-					}
-				}()
-			} else if plainMessage == "!pause" {
-				if !isAdmin(b.Config.Admins, senderName) {
-					e.Sender.Send("❌ No tienes permisos de administrador para usar este comando.")
-					return
-				}
-				if b.Player != nil {
-					b.Player.Pause()
-					e.Sender.Send("⏸️ Reproducción pausada.")
-				}
-			} else if plainMessage == "!resume" {
-				if !isAdmin(b.Config.Admins, senderName) {
-					e.Sender.Send("❌ No tienes permisos de administrador para usar este comando.")
-					return
-				}
-				if b.Player != nil {
-					b.Player.Resume()
-					e.Sender.Send("▶️ Reproducción reanudada.")
-				}
-			} else if plainMessage == "!stop" {
-				if !isAdmin(b.Config.Admins, senderName) {
-					e.Sender.Send("❌ No tienes permisos de administrador para usar este comando.")
-					return
-				}
-				// Detiene el reproductor, pero NO limpia la cola (el Worker seguirá con el siguiente tras el sleep).
-				// ¡Ojo! Como el worker intentará la siguiente si salimos de 'Stop()', 
-				// en realidad !stop actuará casi como !skip si no pausamos el worker. 
-				// Para detener de verdad, limpiamos la cola y luego paramos:
-				db.ClearQueue()
-				if b.Player != nil {
-					b.Player.Stop()
-					if e.Client.Self.Channel != nil {
-						e.Client.Self.Channel.Send("Reproducción y cola detenidas.", false)
-					}
-				}
+			if !strings.HasPrefix(plainMessage, "!") {
+				return
 			}
+
+			// Parse command and args
+			parts := strings.Split(plainMessage[1:], " ")
+			cmdName := strings.ToLower(parts[0])
+			args := parts[1:]
+
+			cmd, exists := commandMap[cmdName]
+			if !exists {
+				e.Sender.Send(fmt.Sprintf("Comando no encontrado: !%s. Usa !help para ver la lista.", cmdName))
+				return
+			}
+
+			if cmd.AdminOnly && !isAdmin(b.Config.Admins, senderName) {
+				e.Sender.Send("❌ No tienes permisos de administrador para usar este comando.")
+				return
+			}
+
+			cmd.Handler(b, e, args)
 		},
 	})
 

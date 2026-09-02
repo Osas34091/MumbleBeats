@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -66,6 +67,13 @@ func (s *Server) setupRoutes() {
 		r.Post("/stop", s.handleStop)
 		r.Post("/pause", s.handlePause)
 		r.Post("/resume", s.handleResume)
+		r.Post("/seek", s.handleSeek)
+		r.Post("/speed", s.handleSpeed)
+		r.Post("/filter", s.handleFilter)
+		r.Post("/volume", s.handleVolume)
+		r.Post("/shutdown", s.handleShutdown)
+		r.Get("/config", s.handleGetConfig)
+		r.Post("/config", s.handleSaveConfig)
 		r.Delete("/queue/{id}", s.handleRemoveTrack)
 		r.Post("/queue/{id}/up", s.handleMoveUp)
 		r.Post("/queue/{id}/down", s.handleMoveDown)
@@ -115,12 +123,17 @@ func (s *Server) GetState() map[string]interface{} {
 	position := 0
 	isPaused := false
 	speed := float32(1.0)
+	volume := float32(1.0)
 	
-	if s.Bot.Player != nil && s.Bot.Player.CurrentTrack != nil {
-		currentTrack = s.Bot.Player.CurrentTrack
-		position = int(s.Bot.Player.Position.Seconds())
-		isPaused = s.Bot.Player.IsPaused
+	if s.Bot.Player != nil {
 		speed = s.Bot.Player.Speed
+		volume = s.Bot.Player.BaseVolume
+		
+		if s.Bot.Player.CurrentTrack != nil {
+			currentTrack = s.Bot.Player.CurrentTrack
+			position = int(s.Bot.Player.Position.Seconds())
+			isPaused = s.Bot.Player.IsPaused
+		}
 	}
 
 	return map[string]interface{}{
@@ -130,6 +143,7 @@ func (s *Server) GetState() map[string]interface{} {
 		"position":    position,
 		"is_paused":   isPaused,
 		"speed":       speed,
+		"volume":      volume,
 	}
 }
 
@@ -348,6 +362,106 @@ func (s *Server) handleUpload(w http.ResponseWriter, r *http.Request) {
 	
 	// Reindexar base de datos
 	db.IndexLocalLibrary("music")
+	
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]bool{"success": true})
+}
+
+// Control PRO
+func (s *Server) handleSeek(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Seconds int `json:"seconds"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	
+	if s.Bot != nil && s.Bot.Player != nil {
+		s.Bot.Player.Seek(req.Seconds)
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
+func (s *Server) handleSpeed(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Speed float64 `json:"speed"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	
+	if s.Bot != nil && s.Bot.Player != nil {
+		s.Bot.Player.SetSpeed(req.Speed)
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
+func (s *Server) handleFilter(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Filter string `json:"filter"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	
+	if s.Bot != nil && s.Bot.Player != nil {
+		s.Bot.Player.ApplyFilter(req.Filter)
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
+func (s *Server) handleVolume(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Volume float32 `json:"volume"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	
+	if s.Bot != nil && s.Bot.Player != nil {
+		s.Bot.Player.BaseVolume = req.Volume
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
+func (s *Server) handleShutdown(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	go func() {
+		time.Sleep(1 * time.Second)
+		if s.Bot != nil && s.Bot.Client != nil {
+			s.Bot.Client.Disconnect()
+		}
+		os.Exit(0)
+	}()
+}
+
+func (s *Server) handleGetConfig(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(s.Bot.Config)
+}
+
+func (s *Server) handleSaveConfig(w http.ResponseWriter, r *http.Request) {
+	var newCfg config.Config
+	if err := json.NewDecoder(r.Body).Decode(&newCfg); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	
+	// Keep same password if masked or empty, just basic save
+	if newCfg.Password == "" {
+		newCfg.Password = s.Bot.Config.Password
+	}
+	
+	*s.Bot.Config = newCfg
+	err := config.SaveConfig(s.Bot.Config, "config.json")
+	if err != nil {
+		http.Error(w, "Failed to save config", http.StatusInternalServerError)
+		return
+	}
 	
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]bool{"success": true})

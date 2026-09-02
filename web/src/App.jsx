@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Play, Pause, SkipForward, Square, Trash2, Search, Music, ListMusic, User, Volume2 } from 'lucide-react'
+import { Play, Pause, SkipForward, Square, Trash2, Search, Music, ListMusic, User, Volume2, Volume, Volume1, VolumeX, Settings, Save } from 'lucide-react'
 
 function App() {
   const [queue, setQueue] = useState([])
@@ -12,6 +12,15 @@ function App() {
   const [playbackState, setPlaybackState] = useState({ position: 0, is_paused: false, speed: 1.0 })
   const [playlists, setPlaylists] = useState([])
   const [playlistName, setPlaylistName] = useState('')
+  const [activeTab, setActiveTab] = useState('player') // 'player' | 'settings'
+  const [config, setConfig] = useState({})
+
+  const fetchConfig = async () => {
+    try {
+      const res = await fetch('/api/config')
+      if (res.ok) setConfig(await res.json())
+    } catch(err) {}
+  }
 
   const fetchPlaylists = async () => {
     try {
@@ -81,6 +90,7 @@ function App() {
   useEffect(() => {
     fetchQueue()
     fetchPlaylists()
+    fetchConfig()
     
     // Configurar WebSocket
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -195,6 +205,7 @@ function App() {
           </div>
         </div>
         
+        <div className="flex gap-4 items-center">
         {isOnline ? (
           <div className="flex items-center gap-2 text-sm text-emerald-400 font-medium px-3 py-1.5 bg-emerald-400/10 rounded-full border border-emerald-400/20">
             <span className="relative flex h-2.5 w-2.5">
@@ -211,8 +222,38 @@ function App() {
             Offline
           </div>
         )}
+        <button
+          onClick={() => {
+            if(confirm("¿Seguro que deseas apagar y desconectar el bot por completo?")) {
+              fetch('/api/shutdown', { method: 'POST' });
+              setIsOnline(false);
+            }
+          }}
+          className="text-xs bg-rose-500/20 text-rose-400 hover:bg-rose-500/40 px-3 py-1.5 rounded-full border border-rose-500/30 transition-all font-bold"
+          title="Desconecta el bot y cierra la consola"
+        >
+          Apagar Bot
+        </button>
+        </div>
       </header>
 
+      {/* Navigation Tabs */}
+      <div className="flex gap-4 mb-6 border-b border-slate-800 pb-2">
+        <button 
+          onClick={() => setActiveTab('player')}
+          className={`flex items-center gap-2 px-4 py-2 font-medium transition-all ${activeTab === 'player' ? 'text-primary-400 border-b-2 border-primary-500' : 'text-slate-400 hover:text-slate-200'}`}
+        >
+          <Music size={18} /> Reproductor
+        </button>
+        <button 
+          onClick={() => setActiveTab('settings')}
+          className={`flex items-center gap-2 px-4 py-2 font-medium transition-all ${activeTab === 'settings' ? 'text-primary-400 border-b-2 border-primary-500' : 'text-slate-400 hover:text-slate-200'}`}
+        >
+          <Settings size={18} /> Configuración
+        </button>
+      </div>
+
+      {activeTab === 'player' ? (
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column: Player & Search */}
         <div className="lg:col-span-7 flex flex-col gap-6">
@@ -252,37 +293,129 @@ function App() {
                   </div>
                   
                   {/* Controls */}
-                  <div className="flex items-center justify-center md:justify-start gap-3">
-                    <button 
-                      onClick={() => handleCommand('stop')}
-                      disabled={isLoading}
-                      className="p-3 rounded-full bg-slate-800 hover:bg-rose-500/20 text-slate-300 hover:text-rose-400 border border-slate-700 transition-all hover:scale-105 disabled:opacity-50"
-                      title="Detener Reproducción"
-                    >
-                      <Square size={20} fill="currentColor" />
-                    </button>
-                    
-                    <button 
-                      onClick={() => handleCommand(playbackState.is_paused ? 'resume' : 'pause')}
-                      disabled={isLoading}
-                      className="p-4 rounded-full bg-primary-600 hover:bg-primary-500 text-white shadow-lg shadow-primary-500/30 transition-all hover:scale-105 hover:shadow-primary-500/50 disabled:opacity-50"
-                      title={playbackState.is_paused ? "Reanudar" : "Pausar"}
-                    >
-                      {playbackState.is_paused ? (
-                        <Play size={24} fill="currentColor" />
-                      ) : (
-                        <Pause size={24} fill="currentColor" />
-                      )}
-                    </button>
+                  <div className="flex flex-col gap-4 w-full mt-4">
+                    <div className="flex items-center justify-center md:justify-start gap-3">
+                      <button 
+                        onClick={() => handleCommand('stop')}
+                        disabled={isLoading}
+                        className="p-3 rounded-full bg-slate-800 hover:bg-rose-500/20 text-slate-300 hover:text-rose-400 border border-slate-700 transition-all hover:scale-105 disabled:opacity-50"
+                        title="Detener Reproducción"
+                      >
+                        <Square size={20} fill="currentColor" />
+                      </button>
+                      
+                      <button 
+                        onClick={() => {
+                          const newPos = Math.max(0, playbackState.position - 15);
+                          fetch('/api/seek', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({seconds: newPos})});
+                        }}
+                        disabled={isLoading || playbackState.position < 15}
+                        className="p-2 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-all hover:scale-105 disabled:opacity-50"
+                        title="Atrasar 15s"
+                      >
+                        -15s
+                      </button>
 
-                    <button 
-                      onClick={() => handleCommand('skip')}
-                      disabled={isLoading}
-                      className="p-3 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-all hover:scale-105 disabled:opacity-50"
-                      title="Saltar Canción"
-                    >
-                      <SkipForward size={20} fill="currentColor" />
-                    </button>
+                      <button 
+                        onClick={() => handleCommand(playbackState.is_paused ? 'resume' : 'pause')}
+                        disabled={isLoading}
+                        className="p-4 rounded-full bg-primary-600 hover:bg-primary-500 text-white shadow-lg shadow-primary-500/30 transition-all hover:scale-105 hover:shadow-primary-500/50 disabled:opacity-50"
+                        title={playbackState.is_paused ? "Reanudar" : "Pausar"}
+                      >
+                        {playbackState.is_paused ? (
+                          <Play size={24} fill="currentColor" />
+                        ) : (
+                          <Pause size={24} fill="currentColor" />
+                        )}
+                      </button>
+
+                      <button 
+                        onClick={() => {
+                          const newPos = playbackState.position + 15;
+                          fetch('/api/seek', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({seconds: newPos})});
+                        }}
+                        disabled={isLoading}
+                        className="p-2 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-all hover:scale-105 disabled:opacity-50"
+                        title="Adelantar 15s"
+                      >
+                        +15s
+                      </button>
+
+                      <button 
+                        onClick={() => handleCommand('skip')}
+                        disabled={isLoading}
+                        className="p-3 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-all hover:scale-105 disabled:opacity-50"
+                        title="Saltar Canción"
+                      >
+                        <SkipForward size={20} fill="currentColor" />
+                      </button>
+                    </div>
+
+                    {/* Advanced Controls */}
+                    <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-sm mt-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-slate-400 font-medium">Velocidad:</span>
+                        <select 
+                          className="bg-slate-800 border border-slate-700 rounded-lg text-slate-200 px-2 py-1 outline-none focus:ring-1 focus:ring-primary-500"
+                          value={playbackState.speed}
+                          onChange={(e) => {
+                            fetch('/api/speed', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({speed: parseFloat(e.target.value)})});
+                          }}
+                        >
+                          <option value="0.5">0.5x</option>
+                          <option value="0.75">0.75x</option>
+                          <option value="1">1.0x</option>
+                          <option value="1.25">1.25x</option>
+                          <option value="1.5">1.5x</option>
+                          <option value="2">2.0x</option>
+                        </select>
+                      </div>
+                      
+                      <div className="flex items-center gap-2">
+                        <span className="text-slate-400 font-medium">Filtro DSP:</span>
+                        <select 
+                          className="bg-slate-800 border border-slate-700 rounded-lg text-slate-200 px-2 py-1 outline-none focus:ring-1 focus:ring-primary-500"
+                          onChange={(e) => {
+                            fetch('/api/filter', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({filter: e.target.value})});
+                          }}
+                        >
+                          <option value="off">Ninguno (Normal)</option>
+                          <option value="nightcore">Nightcore</option>
+                          <option value="bassboost">Bass Boost</option>
+                          <option value="echo">Echo</option>
+                        </select>
+                      </div>
+                      
+                      <div className="flex items-center gap-3 bg-slate-800/50 px-3 py-1.5 rounded-xl border border-slate-700/50">
+                        <button
+                          onClick={() => {
+                            const newVol = playbackState.volume === 0 ? 1 : 0;
+                            setPlaybackState(prev => ({...prev, volume: newVol}));
+                            fetch('/api/volume', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({volume: newVol})});
+                          }}
+                          className="text-slate-400 hover:text-primary-400 transition-colors"
+                        >
+                          {playbackState.volume === 0 ? <VolumeX size={18} /> : playbackState.volume < 0.5 ? <Volume1 size={18} /> : <Volume2 size={18} />}
+                        </button>
+                        <div className="relative flex items-center group/vol">
+                          <input 
+                            type="range" 
+                            min="0" max="2" step="0.05"
+                            value={playbackState.volume}
+                            onChange={(e) => {
+                              const newVol = parseFloat(e.target.value);
+                              setPlaybackState(prev => ({...prev, volume: newVol}));
+                              fetch('/api/volume', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({volume: newVol})});
+                            }}
+                            className="w-24 h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-primary-500 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:shadow-[0_0_10px_rgba(14,165,233,0.5)] group-hover/vol:[&::-webkit-slider-thumb]:scale-125 transition-all"
+                          />
+                          <div 
+                            className="absolute left-0 h-1.5 bg-primary-500 rounded-l-lg pointer-events-none" 
+                            style={{width: `${(playbackState.volume / 2) * 100}%`}}
+                          />
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -504,6 +637,78 @@ function App() {
           </div>
         </div>
       </div>
+      ) : (
+      <div className="glass-panel p-6 rounded-2xl max-w-2xl mx-auto">
+        <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+          <Settings size={24} className="text-primary-400" />
+          Ajustes del Servidor
+        </h2>
+        <form onSubmit={async (e) => {
+          e.preventDefault()
+          setIsLoading(true)
+          try {
+            const req = {
+              server_address: e.target.server_address.value,
+              server_port: e.target.server_port.value,
+              username: e.target.username.value,
+              password: e.target.password.value,
+              channel: e.target.channel.value,
+              insecure: e.target.insecure.checked,
+              admins: e.target.admins.value.split(',').map(s => s.trim()).filter(Boolean)
+            }
+            await fetch('/api/config', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(req)})
+            alert("Configuración guardada.")
+          } catch(err) {
+            alert("Error al guardar.")
+          }
+          setIsLoading(false)
+        }} className="flex flex-col gap-4">
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-400 mb-1">Dirección del Servidor</label>
+              <input name="server_address" defaultValue={config.server_address || ''} className="w-full bg-slate-800/50 border border-slate-700/50 rounded-xl py-2 px-4 text-white placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-primary-500" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-400 mb-1">Puerto</label>
+              <input name="server_port" defaultValue={config.server_port || ''} className="w-full bg-slate-800/50 border border-slate-700/50 rounded-xl py-2 px-4 text-white placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-primary-500" />
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-400 mb-1">Nombre de Usuario</label>
+              <input name="username" defaultValue={config.username || ''} className="w-full bg-slate-800/50 border border-slate-700/50 rounded-xl py-2 px-4 text-white placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-primary-500" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-400 mb-1">Contraseña</label>
+              <input name="password" type="password" placeholder="Dejar en blanco para no cambiar" className="w-full bg-slate-800/50 border border-slate-700/50 rounded-xl py-2 px-4 text-white placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-primary-500" />
+            </div>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-slate-400 mb-1">Canal (Por Defecto)</label>
+            <input name="channel" defaultValue={config.channel || ''} className="w-full bg-slate-800/50 border border-slate-700/50 rounded-xl py-2 px-4 text-white placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-primary-500" />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-slate-400 mb-1">Admins (separados por coma)</label>
+            <input name="admins" defaultValue={(config.admins || []).join(', ')} className="w-full bg-slate-800/50 border border-slate-700/50 rounded-xl py-2 px-4 text-white placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-primary-500" />
+          </div>
+          
+          <div className="flex items-center gap-2 mt-2">
+            <input name="insecure" id="insecure" type="checkbox" defaultChecked={config.insecure} className="w-4 h-4 rounded bg-slate-800 border-slate-700 text-primary-500 focus:ring-primary-500" />
+            <label htmlFor="insecure" className="text-sm font-medium text-slate-300 cursor-pointer">
+              Permitir conexiones inseguras (Insecure TLS) - Ignora errores de certificado
+            </label>
+          </div>
+          
+          <button type="submit" disabled={isLoading} className="mt-4 flex items-center justify-center gap-2 w-full py-3 bg-primary-600 hover:bg-primary-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-primary-500/30 disabled:opacity-50">
+            <Save size={20} /> Guardar Cambios
+          </button>
+        </form>
+      </div>
+      )}
       
       <style dangerouslySetInnerHTML={{__html: `
         .custom-scrollbar::-webkit-scrollbar {
