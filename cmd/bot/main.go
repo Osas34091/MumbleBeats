@@ -3,10 +3,13 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"os/signal"
+	"path/filepath"
 	"runtime"
+	"strings"
 	"syscall"
 	"time"
 
@@ -18,6 +21,10 @@ import (
 )
 
 func main() {
+	if handleSelfMove() {
+		return
+	}
+
 	// Configurar log a archivo para poder depurar cuando usamos -H=windowsgui
 	logFile, err := os.OpenFile("mumblebeats.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err == nil {
@@ -116,4 +123,72 @@ func openBrowser(url string) {
 	if err != nil {
 		fmt.Printf("No se pudo abrir el navegador automáticamente: %v\n", err)
 	}
+}
+
+func handleSelfMove() bool {
+	for _, arg := range os.Args {
+		if strings.HasPrefix(arg, "--cleanup-old=") {
+			oldPath := strings.TrimPrefix(arg, "--cleanup-old=")
+			go func() {
+				time.Sleep(2 * time.Second)
+				os.Remove(oldPath)
+			}()
+			return false
+		}
+	}
+
+	exePath, err := os.Executable()
+	if err != nil {
+		return false
+	}
+	exeDir := filepath.Dir(exePath)
+	exeName := filepath.Base(exePath)
+
+	if strings.ToLower(filepath.Base(exeDir)) == "mumblebeats" {
+		return false
+	}
+
+	if _, err := os.Stat(filepath.Join(exeDir, "config.json")); err == nil {
+		return false
+	}
+
+	targetDir := filepath.Join(exeDir, "MumbleBeats")
+	targetExe := filepath.Join(targetDir, exeName)
+
+	if strings.EqualFold(exePath, targetExe) {
+		return false
+	}
+
+	fmt.Println("Configurando entorno limpio en carpeta MumbleBeats...")
+	if err := os.MkdirAll(targetDir, 0755); err != nil {
+		return false
+	}
+
+	src, err := os.Open(exePath)
+	if err != nil {
+		return false
+	}
+	dst, err := os.OpenFile(targetExe, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0755)
+	if err != nil {
+		src.Close()
+		return false
+	}
+	_, err = io.Copy(dst, src)
+	src.Close()
+	dst.Close()
+
+	if err != nil {
+		return false
+	}
+
+	if runtime.GOOS != "windows" {
+		os.Chmod(targetExe, 0755)
+	}
+
+	cmd := exec.Command(targetExe, fmt.Sprintf("--cleanup-old=%s", exePath))
+	cmd.Dir = targetDir
+	cmd.Start()
+
+	os.Exit(0)
+	return true
 }
