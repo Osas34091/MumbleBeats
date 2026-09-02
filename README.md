@@ -1,5 +1,4 @@
 <div align="center">
-  <img src="https://raw.githubusercontent.com/tu-usuario/MumbleBeats/main/docs/logo.png" alt="MumbleBeats Logo" width="200" />
   <h1>🎵 MumbleBeats</h1>
   <p><strong>El Bot de Música de Nueva Generación para Mumble (Baja Latencia + Estéreo Real)</strong></p>
 </div>
@@ -27,14 +26,6 @@ Gracias a la compilación en Go, **no necesitas instalar Node.js, ni Python, ni 
 El bot descargará automáticamente sus dependencias de audio la primera vez, se conectará al servidor de Mumble por defecto y levantará el Panel de Control Web.
 
 > **Nota:** Por defecto, el panel web estará disponible en `http://localhost:8080`.
-
-## 📸 Capturas de Pantalla
-
-![Dashboard Web](docs/imagen1.png)
-*El panel de control Web, moderno y completamente sincronizado con el bot.*
-
-![Comandos Mumble](docs/imagen2.png)
-*Extracción automática de letras y respuestas elegantes dentro del propio Mumble.*
 
 ## 💬 Comandos Disponibles en Mumble
 
