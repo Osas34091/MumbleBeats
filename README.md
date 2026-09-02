@@ -44,7 +44,7 @@ MumbleBeats is a modern, self-contained music bot for **Mumble** servers, writte
 3. Open your browser at **`http://localhost:8080`** and configure the Mumble server from the **⚙️ Settings** tab.
 
 > The bot will automatically download `yt-dlp` and `ffmpeg` on the first run (~50MB).
-<img width="286" height="446" alt="image" src="https://github.com/user-attachments/assets/a1b8f835-a0c3-422a-b960-b96ee0907685" />
+<img width="286" height="460" alt="image" src="https://github.com/user-attachments/assets/a1b8f835-a0c3-422a-b960-b96ee0907685" />
 
 
 ---
