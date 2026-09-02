@@ -40,7 +40,7 @@ MumbleBeats es un bot de música moderno y auto-contenido para servidores **Mumb
 
 3. Abre tu navegador en **`http://localhost:8080`** y configura el servidor Mumble desde la pestaña **⚙️ Configuración**.
 
-> El bot descargará `yt-dlp` y `ffmpeg` automáticamente la primera vez (~50MB). En Windows no verás ninguna ventana negra.
+> El bot descargará `yt-dlp` y `ffmpeg` automáticamente la primera vez (~50MB).
 
 ---
 
