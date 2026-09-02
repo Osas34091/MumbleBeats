@@ -127,34 +127,3 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: mumblebeats-macos-arm64
-
-  # ─────────────────────────────────────────────
-  #  macOS AMD64 (Intel)
-  # ─────────────────────────────────────────────
-  build-macos-amd64:
-    name: Build macOS (Intel)
-    needs: build-web
-    runs-on: macos-13
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Download Web dist
-        uses: actions/download-artifact@v4
-        with:
-          name: web-dist
-          path: web/dist/
-
-      - uses: actions/setup-go@v5
-        with:
-          go-version: '1.22'
-          cache: true
-
-      - name: Build
-        run: |
-          go build -v -ldflags "-s -w" -o mumblebeats-macos-amd64 ./cmd/bot
-          chmod +x mumblebeats-macos-amd64
-
-      - name: Upload Release Asset
-        uses: softprops/action-gh-release@v2
-        with:
-          files: mumblebeats-macos-amd64
