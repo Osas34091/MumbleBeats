@@ -109,6 +109,7 @@ func FetchPlaylist(url string) ([]*TrackMetadata, error) {
 	// --flat-playlist hace que no extraiga la información profunda (rápido)
 	// --dump-json saca cada video en una línea JSON
 	cmdYt := exec.CommandContext(ctx, exeYtDlp, "--flat-playlist", "-J", url)
+	utils.HideWindow(cmdYt)
 	var out bytes.Buffer
 	var errOut bytes.Buffer
 	cmdYt.Stdout = &out

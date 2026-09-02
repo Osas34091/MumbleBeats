@@ -666,6 +666,7 @@ function App() {
             }
             await fetch('/api/config', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(req)})
             alert("Configuración guardada.")
+            setActiveTab('player')
           } catch(err) {
             alert("Error al guardar.")
           }
