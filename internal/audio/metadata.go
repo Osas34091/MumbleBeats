@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"image"
 	"image/jpeg"
-
 	"net/http"
 	"os/exec"
 	"strings"
@@ -182,7 +181,8 @@ func FetchPlaylist(url string) ([]*TrackMetadata, error) {
 	return tracks, nil
 }
 
-// GetThumbnailBase64 descarga la miniatura y la devuelve en base64 para evitar bloqueos por tamaño en Mumble
+// GetThumbnailBase64 descarga la miniatura y la devuelve en base64 para evitar bloqueos de Mumble.
+// Comprime agresivamente para no superar el límite de 8KB de los mensajes de texto de Mumble.
 func GetThumbnailBase64(url, sizeVariant string) string {
 	if url == "" {
 		return ""
@@ -191,14 +191,20 @@ func GetThumbnailBase64(url, sizeVariant string) string {
 	thumb := url
 	thumb = strings.ReplaceAll(thumb, ".webp", ".jpg")
 	thumb = strings.ReplaceAll(thumb, "vi_webp", "vi")
-	
-	// Eliminar bordes negros forzando mqdefault (16:9)
-	thumb = strings.ReplaceAll(thumb, "maxresdefault", "mqdefault")
-	thumb = strings.ReplaceAll(thumb, "sddefault", "mqdefault")
-	thumb = strings.ReplaceAll(thumb, "hqdefault", "mqdefault")
-	thumb = strings.ReplaceAll(thumb, "default", "mqdefault")
+	ytVariant := sizeVariant
+	if sizeVariant == "now" {
+		ytVariant = "mqdefault"
+	}
 
-	client := &http.Client{Timeout: 3 * time.Second}
+	if ytVariant != "" {
+		thumb = strings.ReplaceAll(thumb, "maxresdefault", ytVariant)
+		thumb = strings.ReplaceAll(thumb, "sddefault", ytVariant)
+		thumb = strings.ReplaceAll(thumb, "hqdefault", ytVariant)
+	}
+
+	client := &http.Client{
+		Timeout: 3 * time.Second,
+	}
 	resp, err := client.Get(thumb)
 	if err != nil {
 		return ""
@@ -211,17 +217,31 @@ func GetThumbnailBase64(url, sizeVariant string) string {
 	}
 
 	var newHeight uint = 90
+	quality := 40 // Calidad al 40% para evitar el límite de 5000 bytes en TODAS las imágenes (play, now, etc)
+	
 	if sizeVariant == "default" {
-		newHeight = 40
+		newHeight = 90 // Mismo tamaño que play
+		quality = 40
+	} else if sizeVariant == "now" {
+		quality = 40
 	}
 	
 	m := resize.Resize(0, newHeight, imgData, resize.Lanczos3)
-
-	var buf bytes.Buffer
-	err = jpeg.Encode(&buf, m, &jpeg.Options{Quality: 80})
-	if err != nil {
-		return ""
+	
+	// Intentamos comprimir, si el base64 final excede 4500 bytes (para no chocar con el límite de 5000 de Mumble),
+	// reducimos la calidad dinámicamente.
+	for q := quality; q >= 10; q -= 15 {
+		var buf bytes.Buffer
+		err = jpeg.Encode(&buf, m, &jpeg.Options{Quality: q})
+		if err != nil {
+			return ""
+		}
+		
+		b64 := fmt.Sprintf("data:image/jpeg;base64,%s", base64.StdEncoding.EncodeToString(buf.Bytes()))
+		if len(b64) < 4500 {
+			return b64
+		}
 	}
 
-	return fmt.Sprintf("data:image/jpeg;base64,%s", base64.StdEncoding.EncodeToString(buf.Bytes()))
+	return ""
 }

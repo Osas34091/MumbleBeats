@@ -26,3 +26,9 @@ ffmpeg_temp.zip
 .idea/
 .vscode/
 *.swp
+
+# Sensitive & DB
+*.db
+*.db-shm
+*.db-wal
+config.json

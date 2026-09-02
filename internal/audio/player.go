@@ -86,11 +86,9 @@ func (p *Player) PlayURL(track *db.Track) error {
 	// Enviar mensaje HTML al canal si estamos conectados a uno
 	if p.client.Self.Channel != nil {
 		var imgTag string
-		if metadata.Thumbnail != "" {
-			imgBase64 := GetThumbnailBase64(metadata.Thumbnail, "mqdefault")
-			if imgBase64 != "" {
-				imgTag = fmt.Sprintf(`<br/><br/><img src="%s" height="90" />`, imgBase64)
-			}
+		imgBase64 := GetThumbnailBase64(metadata.Thumbnail, "mqdefault")
+		if imgBase64 != "" {
+			imgTag = fmt.Sprintf(`<br/><br/><img src="%s" height="90" />`, imgBase64)
 		}
 
 		msg := fmt.Sprintf(`Reproduciendo ahora: <a href="%s"><b>%s</b></a> por <b>%s</b> (Pedido por %s)%s`,

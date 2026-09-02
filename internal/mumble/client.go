@@ -6,6 +6,7 @@ import (
 	"net"
 	"os"
 	"strings"
+	"time"
 
 	"layeh.com/gumble/gumble"
 	"layeh.com/gumble/gumbleutil"
@@ -196,28 +197,35 @@ func (b *BotClient) Connect() error {
 					}
 				}
 			} else if plainMessage == "!queue" || plainMessage == "!q" {
-				tracks, err := db.GetQueue(5)
-				if err != nil {
-					e.Sender.Send(fmt.Sprintf("Error obteniendo cola: %v", err))
-					return
-				}
-				if len(tracks) == 0 {
-					e.Sender.Send("La cola está vacía.")
-				} else {
-					msg := "<b>Siguientes canciones en cola:</b><br><br><table style=\"border-spacing: 0 5px;\">"
-					for i, t := range tracks {
-						imgTag := ""
-						if t.Thumbnail != "" {
-							imgBase64 := audio.GetThumbnailBase64(t.Thumbnail, "default")
-							if imgBase64 != "" {
-								imgTag = fmt.Sprintf(`<img src="%s" height="40" style="vertical-align: middle; border-radius: 4px;" />`, imgBase64)
-							}
-						}
-						msg += fmt.Sprintf(`<tr><td style="padding-right: 10px;"><b>%d.</b></td><td style="padding-right: 10px;">%s</td><td>%s <span style="color: #888; font-size: 0.9em;">(por %s)</span></td></tr>`, i+1, imgTag, t.Title, t.AddedBy)
+				go func() {
+					tracks, err := db.GetQueue(5)
+					if err != nil {
+						e.Sender.Send(fmt.Sprintf("Error obteniendo cola: %v", err))
+						return
 					}
-					msg += "</table>"
-					e.Sender.Send(msg)
-				}
+					if len(tracks) == 0 {
+						e.Sender.Send("La cola está vacía.")
+					} else {
+						for i, t := range tracks {
+							imgTag := ""
+							if t.Thumbnail != "" {
+								imgBase64 := audio.GetThumbnailBase64(t.Thumbnail, "default")
+								if imgBase64 != "" {
+									imgTag = fmt.Sprintf(`<br><img src="%s" height="90" style="vertical-align: middle; border-radius: 4px;" /><br>`, imgBase64)
+								}
+							}
+							
+							msg := ""
+							if i == 0 {
+								msg += "<b>Siguientes canciones en cola:</b><br><br>"
+							}
+							
+							msg += fmt.Sprintf(`<b>%d.</b> %s <span style="color: #888; font-size: 0.9em;">(por %s)</span>%s`, i+1, t.Title, t.AddedBy, imgTag)
+							e.Sender.Send(msg)
+							time.Sleep(300 * time.Millisecond) // Evita límite de spam de Mumble
+						}
+					}
+				}()
 			} else if plainMessage == "!help" || plainMessage == "!h" {
 				helpMsg := `<b>Comandos de MumbleBeats:</b><br>
 <br>
@@ -227,9 +235,6 @@ func (b *BotClient) Connect() error {
 <b>!playlocal &lt;nombre&gt;</b> - Añade un archivo .mp3 de la carpeta local.<br>
 <b>!queue</b> o <b>!q</b> - Muestra las siguientes 5 canciones en la cola.<br>
 <b>!now</b> o <b>!np</b> - Muestra la canción actual y su progreso.<br>
-<br>
-🌐 <b>Panel Web:</b> <code>http://localhost:8080</code> (Para gestionar la cola y playlists).<br>
-<br>
 <b>[Admins] !pause / !resume</b> - Pausa o reanuda la canción actual.<br>
 <b>[Admins] !skip</b> o <b>!s</b> - Salta la canción que está sonando actualmente.<br>
 <b>[Admins] !clear</b> - Elimina todas las canciones de la cola.<br>
@@ -237,27 +242,29 @@ func (b *BotClient) Connect() error {
 <b>!help</b> o <b>!h</b> - Muestra este mensaje de ayuda.`
 				e.Sender.Send(helpMsg)
 			} else if plainMessage == "!now" || plainMessage == "!np" {
-				if b.Player != nil && b.Player.CurrentTrack != nil {
-					track := b.Player.CurrentTrack
-					pos := int(b.Player.Position.Seconds())
-					
-					estado := "▶️ Reproduciendo"
-					if b.Player.IsPaused {
-						estado = "⏸️ Pausado"
-					}
-					
-					imgTag := ""
-					if track.Thumbnail != "" {
-						imgBase64 := audio.GetThumbnailBase64(track.Thumbnail, "mqdefault")
-						if imgBase64 != "" {
-							imgTag = fmt.Sprintf(`<br/><img src="%s" height="90" />`, imgBase64)
+				go func() {
+					if b.Player != nil && b.Player.CurrentTrack != nil {
+						track := b.Player.CurrentTrack
+						pos := int(b.Player.Position.Seconds())
+						
+						estado := "▶️ Reproduciendo"
+						if b.Player.IsPaused {
+							estado = "⏸️ Pausado"
 						}
+						
+						imgTag := ""
+						if track.Thumbnail != "" {
+							imgBase64 := audio.GetThumbnailBase64(track.Thumbnail, "now")
+							if imgBase64 != "" {
+								imgTag = fmt.Sprintf(`<br/><img src="%s" height="90" />`, imgBase64)
+							}
+						}
+						
+						e.Sender.Send(fmt.Sprintf("%s ahora: <b>%s</b><br>Progreso: %02d:%02d%s", estado, track.Title, pos/60, pos%60, imgTag))
+					} else {
+						e.Sender.Send("No hay ninguna canción sonando ahora mismo.")
 					}
-					
-					e.Sender.Send(fmt.Sprintf("%s ahora: <b>%s</b><br>Progreso: %02d:%02d%s", estado, track.Title, pos/60, pos%60, imgTag))
-				} else {
-					e.Sender.Send("No hay ninguna canción sonando ahora mismo.")
-				}
+				}()
 			} else if plainMessage == "!pause" {
 				if !isAdmin(b.Config.Admins, senderName) {
 					e.Sender.Send("❌ No tienes permisos de administrador para usar este comando.")
