@@ -4,7 +4,6 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net"
-	"os"
 	"strings"
 
 	"layeh.com/gumble/gumble"
@@ -18,6 +17,7 @@ type BotClient struct {
 	Client       *gumble.Client
 	Player       *audio.Player
 	GlobalVolume float32
+	OnStateChange func()
 }
 
 func NewBotClient(cfg *config.Config) *BotClient {
@@ -43,6 +43,9 @@ func (b *BotClient) Connect() error {
 			
 			// Inicializar reproductor de audio
 			b.Player = audio.NewPlayer(e.Client)
+			if b.OnStateChange != nil {
+				b.Player.OnStateChange = b.OnStateChange
+			}
 
 			// Unirse al canal configurado
 			if b.Config.Channel != "" {
@@ -63,7 +66,10 @@ func (b *BotClient) Connect() error {
 			if e.Type == gumble.DisconnectError {
 				fmt.Printf("Razón del error: %v\n", e.String)
 			}
-			os.Exit(1)
+			b.Client = nil
+			if b.Player != nil {
+				b.Player.Stop()
+			}
 		},
 		TextMessage: func(e *gumble.TextMessageEvent) {
 			senderName := "Servidor"
@@ -150,4 +156,20 @@ func isAdmin(admins []string, username string) bool {
 		}
 	}
 	return false
+}
+
+func (b *BotClient) Disconnect() {
+	if b.Client != nil {
+		b.Client.Disconnect()
+		b.Client = nil
+	}
+	if b.Player != nil {
+		b.Player.Stop()
+	}
+}
+
+func (b *BotClient) Reconnect() error {
+	b.Disconnect()
+	fmt.Println("Intentando reconectar a Mumble...")
+	return b.Connect()
 }
