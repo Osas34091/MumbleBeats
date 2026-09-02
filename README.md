@@ -15,20 +15,20 @@ MumbleBeats es un bot de música moderno y auto-contenido para servidores **Mumb
 
 ---
 
-## ✨ Características
+## Características
 
-- **🎧 Audio Estéreo en Tiempo Real** — Opus a 48kHz vía FFmpeg → Gumble, latencia de ~10ms
-- **⚡ Dashboard Web Reactivo** — Control total desde el navegador, sincronizado en tiempo real con WebSockets
-- **🎛️ Filtros DSP en Vivo** — Nightcore, Bass Boost, Echo, sin interrumpir la canción (hot-swap FFmpeg)
-- **📻 Radio en Directo** — Integración con `radio-browser.info` via `!radio <nombre>`
-- **🔊 Control de Volumen Global** — Slider en la web y comando `!volume` en Mumble (0–200%)
-- **⚙️ Panel de Configuración Web** — Cambia servidor, usuario, admins... sin tocar ningún archivo
-- **🤖 Auto-Setup** — Descarga `yt-dlp` y `ffmpeg` automáticamente en la primera ejecución
-- **🚫 Sin Terminal Visible** — En Windows el bot corre completamente en segundo plano
+- **- Audio Estéreo en Tiempo Real** — Opus a 48kHz vía FFmpeg → Gumble, latencia de ~10ms
+- **- Dashboard Web Reactivo** — Control total desde el navegador, sincronizado en tiempo real con WebSockets
+- **- Filtros DSP en Vivo** — Nightcore, Bass Boost, Echo, sin interrumpir la canción (hot-swap FFmpeg)
+- **- Radio en Directo** — Integración con `radio-browser.info` via `!radio <nombre>`
+- **- Control de Volumen Global** — Slider en la web y comando `!volume` en Mumble (0–200%)
+- **- Panel de Configuración Web** — Cambia servidor, usuario, admins... sin tocar ningún archivo
+- **- Auto-Setup** — Descarga `yt-dlp` y `ffmpeg` automáticamente en la primera ejecución
+- **- Sin Terminal Visible** — En Windows el bot corre completamente en segundo plano
 
 ---
 
-## 🚀 Instalación (¡Menos de 1 minuto!)
+## Instalación (¡Menos de 1 minuto!)
 
 1. Ve a **[Releases](https://github.com/Osas34091/MumbleBeats/releases/latest)** y descarga el ejecutable para tu sistema:
    - `mumblebeats-windows-amd64.exe` → Windows
@@ -44,7 +44,7 @@ MumbleBeats es un bot de música moderno y auto-contenido para servidores **Mumb
 
 ---
 
-## 💬 Comandos de Mumble
+## Comandos de Mumble
 
 | Comando | Alias | Descripción |
 |---------|-------|-------------|
@@ -67,7 +67,7 @@ MumbleBeats es un bot de música moderno y auto-contenido para servidores **Mumb
 
 ---
 
-## 🛠️ Compilar desde el código fuente
+## Compilar desde el código fuente
 
 ```bash
 # Requisitos: Go 1.22+, Node.js 18+
@@ -88,6 +88,6 @@ go build -ldflags "-s -w" -o mumblebeats ./cmd/bot
 
 ---
 
-## 📜 Licencia
+## Licencia
 
 Este proyecto es libre y de código abierto bajo la licencia MIT. ¡Siéntete libre de contribuir!
