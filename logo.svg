@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 150">
+  <defs>
+    <linearGradient id="cyanGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00ADD8" />
+      <stop offset="100%" stop-color="#007a99" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Logo Icon (Audio Waves forming an M) -->
+  <g transform="translate(40, 35)">
+    <rect x="0" y="30" width="12" height="50" rx="6" fill="#333" />
+    <rect x="18" y="10" width="12" height="70" rx="6" fill="url(#cyanGrad)" />
+    <rect x="36" y="40" width="12" height="40" rx="6" fill="#333" />
+    <rect x="54" y="10" width="12" height="70" rx="6" fill="url(#cyanGrad)" />
+    <rect x="72" y="30" width="12" height="50" rx="6" fill="#333" />
+  </g>
+
+  <!-- Typography -->
+  <text x="140" y="95" font-family="'Segoe UI', Helvetica, Arial, sans-serif" font-size="64" font-weight="900" letter-spacing="-1.5">
+    <tspan fill="#24292e">Mumble</tspan><tspan fill="url(#cyanGrad)">Beats</tspan>
+  </text>
+  
+  <!-- Subtitle -->
+  <text x="145" y="120" font-family="'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="700" fill="#6a737d" letter-spacing="3">
+    STANDALONE AUDIO PIPELINE
+  </text>
+</svg>
