@@ -118,7 +118,7 @@ func ensureFFmpeg(ctx context.Context) error {
 		return downloadAndExtractFFmpegWin(ctx, downloadURL, exeName)
 	case "linux":
 		downloadURL = "https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz"
-		return fmt.Errorf("auto-download para linux no implementado aún")
+		return downloadAndExtractFFmpegLinux(ctx, downloadURL, exeName)
 	default:
 		return fmt.Errorf("unsupported os para auto-descarga de ffmpeg")
 	}
@@ -208,4 +208,40 @@ func downloadAndExtractFFmpegWin(ctx context.Context, url string, exeName string
 	}
 
 	return fmt.Errorf("no se encontró ffmpeg.exe dentro del zip")
+}
+
+func downloadAndExtractFFmpegLinux(ctx context.Context, url string, exeName string) error {
+	tarPath := "ffmpeg_temp.tar.xz"
+	err := downloadFile(ctx, url, tarPath)
+	if err != nil {
+		return err
+	}
+	defer os.Remove(tarPath)
+
+	fmt.Println("\nExtrayendo ffmpeg (por favor espera)...")
+
+	// Use tar command to extract
+	cmd := exec.CommandContext(ctx, "tar", "-xf", tarPath)
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("error extrayendo tar.xz: %v", err)
+	}
+
+	// The extracted folder has a dynamic name like ffmpeg-*-amd64-static
+	// Find the ffmpeg binary inside
+	files, err := filepath.Glob("ffmpeg-*-static/ffmpeg")
+	if err != nil || len(files) == 0 {
+		return fmt.Errorf("no se encontró el binario ffmpeg extraído")
+	}
+
+	// Move to current directory
+	if err := os.Rename(files[0], exeName); err != nil {
+		return fmt.Errorf("error moviendo binario: %v", err)
+	}
+
+	// Clean up extracted folder
+	dirToClean := filepath.Dir(files[0])
+	os.RemoveAll(dirToClean)
+
+	fmt.Println("✅ ffmpeg extraído exitosamente.")
+	return nil
 }

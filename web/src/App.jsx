@@ -665,6 +665,7 @@ function App() {
               admins: e.target.admins.value.split(',').map(s => s.trim()).filter(Boolean)
             }
             await fetch('/api/config', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(req)})
+            setConfig(req)
             alert("Configuración guardada.")
             setActiveTab('player')
           } catch(err) {
