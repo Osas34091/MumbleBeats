@@ -16,7 +16,14 @@ import (
 )
 
 func main() {
-	fmt.Println("Iniciando MumbleBeats...")
+	// Configurar log a archivo para poder depurar cuando usamos -H=windowsgui
+	logFile, err := os.OpenFile("mumblebeats.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err == nil {
+		os.Stdout = logFile
+		os.Stderr = logFile
+	}
+	fmt.Println("--- Iniciando MumbleBeats ---")
+	fmt.Println("Fecha:", time.Now().Format(time.RFC3339))
 
 	// 1. Cargar Configuración
 	cfg, err := config.LoadConfig("config.json")
@@ -43,10 +50,11 @@ func main() {
 
 	fmt.Println("Verificando dependencias de audio...")
 	if err := audio.EnsureDependencies(ctx); err != nil {
-		fmt.Printf("Error fatal al descargar dependencias: %v\n", err)
-		os.Exit(1)
+		fmt.Printf("ADVERTENCIA: No se pudieron descargar las dependencias automáticamente: %v\n", err)
+		fmt.Println("Las funciones de YouTube podrían no funcionar. Puedes descargar yt-dlp.exe y ffmpeg manualmente y ponerlos en esta carpeta.")
+	} else {
+		fmt.Println("Dependencias listas.")
 	}
-	fmt.Println("Dependencias listas.")
 
 	// 3. Conectar a Mumble
 	fmt.Println("Conectando al servidor de Mumble...")
