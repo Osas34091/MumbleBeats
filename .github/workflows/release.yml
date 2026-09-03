@@ -59,12 +59,12 @@ jobs:
           cache: true
 
       - name: Build
-        run: go build -v -ldflags "-H=windowsgui -s -w" -o mumblebeats-windows-amd64.exe ./cmd/bot
+        run: go build -v -ldflags "-H=windowsgui -s -w" -o mumblebeats-windows-amd64-${{ github.event.release.tag_name }}.exe ./cmd/bot
 
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v2
         with:
-          files: mumblebeats-windows-amd64.exe
+          files: mumblebeats-windows-amd64-${{ github.event.release.tag_name }}.exe
 
   # ─────────────────────────────────────────────
   #  LINUX (amd64)
@@ -89,13 +89,13 @@ jobs:
 
       - name: Build
         run: |
-          go build -v -ldflags "-s -w" -o mumblebeats-linux-amd64 ./cmd/bot
-          chmod +x mumblebeats-linux-amd64
+          go build -v -ldflags "-s -w" -o mumblebeats-linux-amd64-${{ github.event.release.tag_name }} ./cmd/bot
+          chmod +x mumblebeats-linux-amd64-${{ github.event.release.tag_name }}
 
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v2
         with:
-          files: mumblebeats-linux-amd64
+          files: mumblebeats-linux-amd64-${{ github.event.release.tag_name }}
 
   # ─────────────────────────────────────────────
   #  macOS ARM64 (Apple Silicon M1/M2/M3)
@@ -120,10 +120,10 @@ jobs:
 
       - name: Build
         run: |
-          go build -v -ldflags "-s -w" -o mumblebeats-macos-arm64 ./cmd/bot
-          chmod +x mumblebeats-macos-arm64
+          go build -v -ldflags "-s -w" -o mumblebeats-macos-arm64-${{ github.event.release.tag_name }} ./cmd/bot
+          chmod +x mumblebeats-macos-arm64-${{ github.event.release.tag_name }}
 
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v2
         with:
-          files: mumblebeats-macos-arm64
+          files: mumblebeats-macos-arm64-${{ github.event.release.tag_name }}
