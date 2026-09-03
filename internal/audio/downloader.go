@@ -238,6 +238,11 @@ func downloadAndExtractFFmpegLinux(ctx context.Context, url string, exeName stri
 		return fmt.Errorf("error moviendo binario: %v", err)
 	}
 
+	// Make executable
+	if err := os.Chmod(exeName, 0755); err != nil {
+		fmt.Printf("ADVERTENCIA: no se pudo dar permisos de ejecución a ffmpeg: %v\n", err)
+	}
+
 	// Clean up extracted folder
 	dirToClean := filepath.Dir(files[0])
 	os.RemoveAll(dirToClean)

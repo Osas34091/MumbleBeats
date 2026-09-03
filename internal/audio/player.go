@@ -178,6 +178,7 @@ func (p *Player) PlayDirectStream(ctx context.Context, streamURL string) error {
 		}
 
 		args := []string{
+			"-loglevel", "error",
 			"-reconnect", "1",
 			"-reconnect_streamed", "1",
 			"-reconnect_delay_max", "5",
@@ -227,6 +228,8 @@ func (p *Player) PlayDirectStream(ctx context.Context, streamURL string) error {
 		if err := cmdFFmpeg.Start(); err != nil {
 			return fmt.Errorf("error iniciando ffmpeg: %v, stderr: %s", err, errOut.String())
 		}
+		
+		fmt.Println("DEBUG: ffmpeg iniciado correctamente, leyendo audio...")
 
 		outChan := p.client.AudioOutgoing()
 
@@ -260,6 +263,7 @@ func (p *Player) PlayDirectStream(ctx context.Context, streamURL string) error {
 
 				err := binary.Read(stdout, binary.LittleEndian, &intBuf)
 				if err != nil {
+					fmt.Printf("DEBUG: Fin de lectura de FFmpeg o error: %v\n", err)
 					break readLoop // Fin del archivo o error (continuará al wait y saldrá)
 				}
 
@@ -287,9 +291,12 @@ func (p *Player) PlayDirectStream(ctx context.Context, streamURL string) error {
 
 		ticker.Stop()
 		cmdFFmpeg.Process.Kill() // Matar el proceso anterior antes de reiniciar o salir
-		cmdFFmpeg.Wait()
+		waitErr := cmdFFmpeg.Wait()
 		
 		if !restarting {
+			if waitErr != nil && waitErr.Error() != "signal: killed" {
+				fmt.Printf("ADVERTENCIA: FFmpeg finalizó con error: %v\nStderr: %s\n", waitErr, errOut.String())
+			}
 			// Si no estamos reiniciando, significa que la canción terminó
 			return nil
 		}
