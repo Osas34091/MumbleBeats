@@ -2,10 +2,13 @@
 
 This document outlines the planned features, enhancements, and upcoming versions for **MumbleBeats** to continuously improve the user experience and functionality.
 
+## Completed Versions
+
+### v1.1.0
+- **Web Authentication & Setup:** Added a secure username/password authentication system. The first time the Web UI is accessed, it prompts the user to create an admin account. This allows the dashboard to be exposed to the internet safely without touching the terminal.
+
 ## Upcoming Versions
 
-### v1.1
-- **Web Authentication & Setup:** Add a secure username/password authentication system. The first time the Web UI is accessed, it will prompt the user to create an admin account. This allows the dashboard to be exposed to the internet safely without touching the terminal.
 
 ### v1.2
 - **System Tray Icon (Windows):** Add a background tray icon in the Windows taskbar. This will allow the user to easily see if the bot is running, right-click to open the dashboard, or stop the bot entirely, improving the UX for background processes.
