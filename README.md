@@ -39,9 +39,10 @@ MumbleBeats is a modern, self-contained music bot for **Mumble** servers, writte
    - `mumblebeats-linux-amd64` → Linux
    - `mumblebeats-macos-arm64` → macOS Apple Silicon (M1/M2/M3)
 
-2. **Run it** anywhere (double click on Windows, `./mumblebeats-...` in terminal on Linux/macOS). It will automatically create a `MumbleBeats` folder to keep everything clean and organized.
+2. **Run it** anywhere (double click on Windows, `./mumblebeats-...` in terminal on Linux/macOS).
+3. It will automatically create a `MumbleBeats` folder.
 
-3. Open your browser at **`http://localhost:8080`** and configure the Mumble server from the **⚙️ Settings** tab.
+4. Open your browser at **`http://localhost:8080`** and configure the Mumble server from the **⚙️ Settings** tab.
 
 > The bot will automatically download `yt-dlp` and `ffmpeg` on the first run (~50MB).
 <img width="286" height="500" alt="image" src="https://github.com/user-attachments/assets/a1b8f835-a0c3-422a-b960-b96ee0907685" />
