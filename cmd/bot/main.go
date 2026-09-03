@@ -6,11 +6,9 @@ import (
 	"io"
 	"os"
 	"os/exec"
-	"os/signal"
 	"path/filepath"
 	"runtime"
 	"strings"
-	"syscall"
 	"time"
 
 	"mumblebeats/internal/api"
@@ -77,37 +75,37 @@ func main() {
 		apiServer.Hub.Broadcast(apiServer.GetState())
 	}
 	
-	go func() {
-		if err := apiServer.Start(":8080"); err != nil {
-			fmt.Printf("Error en Servidor HTTP: %v\n", err)
-		}
-	}()
-	
-	// Abrir navegador automáticamente
-	openBrowser("http://localhost:8080")
+	startApp := func() {
+		go func() {
+			if err := apiServer.Start(":8080"); err != nil {
+				fmt.Printf("Error en Servidor HTTP: %v\n", err)
+			}
+		}()
+		
+		// Abrir navegador automáticamente
+		openBrowser("http://localhost:8080")
 
-	// 5. Iniciar Worker de la Cola dinámicamente
-	fmt.Println("Iniciando el Queue Worker...")
-	audio.StartQueueWorker(func() *audio.Player {
-		return botClient.Player
-	})
+		// 5. Iniciar Worker de la Cola dinámicamente
+		fmt.Println("Iniciando el Queue Worker...")
+		audio.StartQueueWorker(func() *audio.Player {
+			return botClient.Player
+		})
 
-	// 6. Conectar a Mumble (No bloqueante / No exit fatal si falla)
-	fmt.Println("Conectando al servidor de Mumble...")
-	go func() {
-		if err := botClient.Connect(); err != nil {
-			fmt.Printf("ADVERTENCIA: Error al conectar a Mumble: %v\n", err)
-			fmt.Println("Por favor, verifica la configuración en el panel web (http://localhost:8080).")
-		}
-	}()
+		// 6. Conectar a Mumble (No bloqueante / No exit fatal si falla)
+		fmt.Println("Conectando al servidor de Mumble...")
+		go func() {
+			if err := botClient.Connect(); err != nil {
+				fmt.Printf("ADVERTENCIA: Error al conectar a Mumble: %v\n", err)
+				fmt.Println("Por favor, verifica la configuración en el panel web (http://localhost:8080).")
+			}
+		}()
+	}
 
-	// 7. Mantener vivo el programa hasta que se reciba una señal de salida (Ctrl+C)
-	sig := make(chan os.Signal, 1)
-	signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
-	<-sig
+	stopApp := func() {
+		botClient.Disconnect()
+	}
 
-	fmt.Println("\nApagando MumbleBeats...")
-	botClient.Disconnect()
+	runWithTray(startApp, stopApp)
 }
 
 func openBrowser(url string) {
