@@ -82,11 +82,11 @@ func ensureYtDlp(ctx context.Context) error {
 	var downloadURL string
 	switch runtime.GOOS {
 	case "windows":
-		downloadURL = "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe"
+		downloadURL = "https://github.com/yt-dlp/yt-dlp-nightly-builds/releases/latest/download/yt-dlp.exe"
 	case "linux":
-		downloadURL = "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_linux"
+		downloadURL = "https://github.com/yt-dlp/yt-dlp-nightly-builds/releases/latest/download/yt-dlp_linux"
 	case "darwin":
-		downloadURL = "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_macos"
+		downloadURL = "https://github.com/yt-dlp/yt-dlp-nightly-builds/releases/latest/download/yt-dlp_macos"
 	default:
 		return fmt.Errorf("unsupported os for yt-dlp: %s", runtime.GOOS)
 	}
