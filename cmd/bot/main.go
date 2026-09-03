@@ -31,7 +31,7 @@ func main() {
 		os.Stdout = logFile
 		os.Stderr = logFile
 	}
-	fmt.Println("--- Iniciando MumbleBeats ---")
+	fmt.Println("--- Iniciando MumbleBeats v1.0.8 ---")
 	fmt.Println("Fecha:", time.Now().Format(time.RFC3339))
 
 	// 1. Cargar Configuración

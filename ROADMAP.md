@@ -5,7 +5,7 @@ This document outlines the planned features, enhancements, and upcoming versions
 ## Upcoming Versions
 
 ### v1.1
-- **Token Authentication for Web API:** Add a secure token-based authentication system to the web API so the dashboard can be exposed to the internet safely, rather than just running on `localhost`.
+- **Web Authentication & Setup:** Add a secure username/password authentication system. The first time the Web UI is accessed, it will prompt the user to create an admin account. This allows the dashboard to be exposed to the internet safely without touching the terminal.
 
 ### v1.2
 - **System Tray Icon (Windows):** Add a background tray icon in the Windows taskbar. This will allow the user to easily see if the bot is running, right-click to open the dashboard, or stop the bot entirely, improving the UX for background processes.

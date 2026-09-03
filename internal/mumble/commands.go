@@ -396,20 +396,32 @@ func cmdPlayLocal(b *BotClient, e *gumble.TextMessageEvent, args []string) {
 
 func cmdQueue(b *BotClient, e *gumble.TextMessageEvent, args []string) {
 	go func() {
-		tracks, err := db.GetQueue(5)
+		tracks, err := db.GetQueue(6) // Fetch 6 in case the first one is playing
 		if err != nil {
 			e.Sender.Send(fmt.Sprintf("Error obteniendo cola: %v", err))
 			return
 		}
-		if len(tracks) == 0 {
+		
+		var pending []*db.Track
+		for _, t := range tracks {
+			if t.Status == "pending" {
+				pending = append(pending, t)
+			}
+		}
+		
+		if len(pending) > 5 {
+			pending = pending[:5]
+		}
+
+		if len(pending) == 0 {
 			e.Sender.Send("La cola está vacía.")
 		} else {
-			for i, t := range tracks {
+			for i, t := range pending {
 				imgTag := ""
 				if t.Thumbnail != "" {
 					imgBase64 := audio.GetThumbnailBase64(t.Thumbnail, "default")
 					if imgBase64 != "" {
-						imgTag = fmt.Sprintf(`<br><img src="%s" height="90" style="vertical-align: middle; border-radius: 4px;" /><br>`)
+						imgTag = fmt.Sprintf(`<br><img src="%s" height="90" style="vertical-align: middle; border-radius: 4px;" /><br>`, imgBase64)
 					}
 				}
 
