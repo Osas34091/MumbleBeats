@@ -72,6 +72,20 @@ func InitDB(filepath string) error {
 		position INTEGER DEFAULT 0,
 		FOREIGN KEY(playlist_id) REFERENCES playlists(id) ON DELETE CASCADE
 	);
+
+	CREATE TABLE IF NOT EXISTS users (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		username TEXT NOT NULL UNIQUE,
+		password_hash TEXT NOT NULL,
+		created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+	);
+
+	CREATE TABLE IF NOT EXISTS sessions (
+		token TEXT PRIMARY KEY,
+		user_id INTEGER,
+		expires_at DATETIME NOT NULL,
+		FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+	);
 	`
 	
 	_, err = DB.Exec(schema)

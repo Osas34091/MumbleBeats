@@ -56,31 +56,41 @@ func NewServer(cfg *config.Config, bot *mumble.BotClient) *Server {
 	s.setupRoutes()
 	return s
 }
-
 func (s *Server) setupRoutes() {
 	s.Router.Route("/api", func(r chi.Router) {
-		r.Get("/ws", s.Hub.ServeWS)
-		r.Get("/queue", s.handleGetQueue)
-		r.Post("/play", s.handlePlay)
-		r.Post("/skip", s.handleSkip)
-		r.Post("/clear", s.handleClear)
-		r.Post("/stop", s.handleStop)
-		r.Post("/pause", s.handlePause)
-		r.Post("/resume", s.handleResume)
-		r.Post("/seek", s.handleSeek)
-		r.Post("/speed", s.handleSpeed)
-		r.Post("/filter", s.handleFilter)
-		r.Post("/volume", s.handleVolume)
-		r.Post("/shutdown", s.handleShutdown)
-		r.Get("/config", s.handleGetConfig)
-		r.Post("/config", s.handleSaveConfig)
-		r.Delete("/queue/{id}", s.handleRemoveTrack)
-		r.Post("/queue/{id}/up", s.handleMoveUp)
-		r.Post("/queue/{id}/down", s.handleMoveDown)
-		r.Get("/playlists", s.handleGetPlaylists)
-		r.Post("/playlists/save", s.handleSavePlaylist)
-		r.Post("/playlists/load", s.handleLoadPlaylist)
-		r.Post("/upload", s.handleUpload)
+		// Rutas públicas (No requieren autenticación)
+		r.Get("/setup/status", s.handleSetupStatus)
+		r.Post("/setup", s.handleSetup)
+		r.Post("/login", s.handleLogin)
+		r.Post("/logout", s.handleLogout)
+
+		// Rutas protegidas
+		r.Group(func(pr chi.Router) {
+			pr.Use(s.AuthMiddleware)
+			pr.Get("/ws", s.Hub.ServeWS)
+			pr.Get("/me", s.handleMe)
+			pr.Get("/queue", s.handleGetQueue)
+			pr.Post("/play", s.handlePlay)
+			pr.Post("/skip", s.handleSkip)
+			pr.Post("/clear", s.handleClear)
+			pr.Post("/stop", s.handleStop)
+			pr.Post("/pause", s.handlePause)
+			pr.Post("/resume", s.handleResume)
+			pr.Post("/seek", s.handleSeek)
+			pr.Post("/speed", s.handleSpeed)
+			pr.Post("/filter", s.handleFilter)
+			pr.Post("/volume", s.handleVolume)
+			pr.Post("/shutdown", s.handleShutdown)
+			pr.Get("/config", s.handleGetConfig)
+			pr.Post("/config", s.handleSaveConfig)
+			pr.Delete("/queue/{id}", s.handleRemoveTrack)
+			pr.Post("/queue/{id}/up", s.handleMoveUp)
+			pr.Post("/queue/{id}/down", s.handleMoveDown)
+			pr.Get("/playlists", s.handleGetPlaylists)
+			pr.Post("/playlists/save", s.handleSavePlaylist)
+			pr.Post("/playlists/load", s.handleLoadPlaylist)
+			pr.Post("/upload", s.handleUpload)
+		})
 	})
 	
 	// Servir frontend en la raíz usando go:embed
@@ -107,6 +117,25 @@ func (s *Server) setupRoutes() {
 			http.ServeContent(w, r, "index.html", stat.ModTime(), file.(io.ReadSeeker))
 		})
 	}
+}
+
+// AuthMiddleware intercepts requests and checks for valid sessions
+func (s *Server) AuthMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		cookie, err := r.Cookie("mumblebeats_session")
+		if err != nil {
+			http.Error(w, "No autenticado", http.StatusUnauthorized)
+			return
+		}
+
+		_, err = db.GetUserFromSession(cookie.Value)
+		if err != nil {
+			http.Error(w, "Sesión inválida o expirada", http.StatusUnauthorized)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
 }
 
 func (s *Server) Start(port string) error {

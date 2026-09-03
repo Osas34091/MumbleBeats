@@ -14,6 +14,9 @@ This document outlines the planned features, enhancements, and upcoming versions
 - **Multi-channel Support:** Allow changing the Mumble channel directly from the Web Dashboard without needing to configure it manually and restart the bot.
 
 ## Future Enhancements (Ideas & Backlog)
+### v1.4
+- **Internationalization (i18n):** Add a language switcher in the Web UI to translate the web interface and the bot's voice channel messages.
+
 - **Advanced Playlist Management:** Visual drag-and-drop playlist creation in the Web UI.
 - **Docker Support:** Official `docker-compose.yml` and Dockerhub images for easy server deployments on Linux.
 - **Spotify Integration:** Ability to search and queue Spotify tracks (which will be matched and played via YouTube under the hood).
