@@ -68,8 +68,14 @@ func (p *Player) PlayURL(track *db.Track) error {
 	
 	exeYtDlp := ResolveExecutable("yt-dlp")
 
+	ytArgs := []string{"--no-playlist", "-J", "-f", "bestaudio"}
+	if _, err := os.Stat("cookies.txt"); err == nil {
+		ytArgs = append(ytArgs, "--cookies", "cookies.txt")
+	}
+	ytArgs = append(ytArgs, track.URL)
+
 	// Obtener la mejor URL de audio y metadata en formato JSON, ignorando playlists
-	cmdYt := exec.CommandContext(ctx, exeYtDlp, "--no-playlist", "-J", "-f", "bestaudio", track.URL)
+	cmdYt := exec.CommandContext(ctx, exeYtDlp, ytArgs...)
 	utils.HideWindow(cmdYt) // Ocultar la ventana de consola en Windows
 	var out bytes.Buffer
 	var errOut bytes.Buffer
