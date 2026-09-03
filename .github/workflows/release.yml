@@ -1,9 +1,8 @@
 name: Release MumbleBeats
 
 on:
-  push:
-    tags:
-      - 'v*'
+  release:
+    types: [created]
 
 # Permisos necesarios para subir assets a la release
 permissions:
