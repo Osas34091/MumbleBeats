@@ -39,9 +39,7 @@ MumbleBeats is a modern, self-contained music bot for **Mumble** servers, writte
    - `mumblebeats-linux-amd64` → Linux
    - `mumblebeats-macos-arm64` → macOS Apple Silicon (M1/M2/M3)
 
-2. **Run it** anywhere (double click on Windows, `./mumblebeats-...` in terminal on Linux/macOS).
-
-It will automatically create a `MumbleBeats` folder.
+2. **Run it** anywhere (double click on Windows, `./mumblebeats-...` in terminal on Linux/macOS). It will automatically create a `MumbleBeats` folder.
 
 4. Open your browser at **`http://localhost:8080`** and configure the Mumble server from the **⚙️ Settings** tab.
 
