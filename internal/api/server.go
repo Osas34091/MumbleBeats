@@ -104,6 +104,7 @@ func (s *Server) setupRoutes() {
 		// Servir los estáticos bajo rutas específicas
 		s.Router.Handle("/assets/*", fileServer)
 		s.Router.Handle("/vite.svg", fileServer)
+		s.Router.Handle("/favicon.ico", fileServer)
 		
 		// Redirigir cualquier otra ruta no "/api" al index.html
 		s.Router.Get("/*", func(w http.ResponseWriter, r *http.Request) {
