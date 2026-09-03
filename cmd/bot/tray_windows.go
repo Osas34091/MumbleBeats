@@ -12,7 +12,7 @@ import (
 	"github.com/getlantern/systray"
 )
 
-//go:embed icon16.png
+//go:embed icon.ico
 var trayIcon []byte
 
 func runWithTray(startApp func(), stopApp func()) {
