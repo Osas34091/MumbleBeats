@@ -90,6 +90,8 @@ func (s *Server) setupRoutes() {
 			pr.Post("/playlists/save", s.handleSavePlaylist)
 			pr.Post("/playlists/load", s.handleLoadPlaylist)
 			pr.Post("/upload", s.handleUpload)
+			pr.Get("/channels", s.handleGetChannels)
+			pr.Post("/channels/join", s.handleJoinChannel)
 		})
 	})
 	
@@ -166,14 +168,20 @@ func (s *Server) GetState() map[string]interface{} {
 		}
 	}
 
+	var currentChannel string
+	if s.Bot.Client != nil && s.Bot.Client.Self != nil && s.Bot.Client.Self.Channel != nil {
+		currentChannel = s.Bot.Client.Self.Channel.Name
+	}
+
 	return map[string]interface{}{
-		"type":        "STATE_UPDATE",
-		"queue":       tracks,
-		"now_playing": currentTrack,
-		"position":    position,
-		"is_paused":   isPaused,
-		"speed":       speed,
-		"volume":      volume,
+		"type":            "STATE_UPDATE",
+		"queue":           tracks,
+		"now_playing":     currentTrack,
+		"position":        position,
+		"is_paused":       isPaused,
+		"speed":           speed,
+		"volume":          volume,
+		"current_channel": currentChannel,
 	}
 }
 
@@ -499,6 +507,34 @@ func (s *Server) handleSaveConfig(w http.ResponseWriter, r *http.Request) {
 			fmt.Printf("ADVERTENCIA: Error al reconectar a Mumble: %v\n", err)
 		}
 	}()
+	
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]bool{"success": true})
+}
+
+func (s *Server) handleGetChannels(w http.ResponseWriter, r *http.Request) {
+	channels := s.Bot.GetChannels()
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(channels)
+}
+
+func (s *Server) handleJoinChannel(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		ChannelName string `json:"channel_name"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	
+	err := s.Bot.MoveToChannel(req.ChannelName)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	
+	// Broadcast new state so UI updates current channel immediately
+	s.Hub.Broadcast(s.GetState())
 	
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]bool{"success": true})

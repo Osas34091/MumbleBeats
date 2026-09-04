@@ -173,3 +173,36 @@ func (b *BotClient) Reconnect() error {
 	fmt.Println("Intentando reconectar a Mumble...")
 	return b.Connect()
 }
+
+type ChannelInfo struct {
+	ID   uint32 `json:"id"`
+	Name string `json:"name"`
+}
+
+func (b *BotClient) GetChannels() []ChannelInfo {
+	if b.Client == nil {
+		return []ChannelInfo{}
+	}
+	var list []ChannelInfo
+	for _, ch := range b.Client.Channels {
+		list = append(list, ChannelInfo{
+			ID:   ch.ID,
+			Name: ch.Name,
+		})
+	}
+	return list
+}
+
+func (b *BotClient) MoveToChannel(name string) error {
+	if b.Client == nil {
+		return fmt.Errorf("bot is not connected")
+	}
+	ch := b.Client.Channels.Find(name)
+	if ch == nil {
+		return fmt.Errorf("channel not found: %s", name)
+	}
+	b.Client.Self.Move(ch)
+	
+	b.Config.Channel = name
+	return config.SaveConfig(b.Config, "config.json")
+}

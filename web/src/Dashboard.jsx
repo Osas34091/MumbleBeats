@@ -14,6 +14,29 @@ function Dashboard() {
   const [playlistName, setPlaylistName] = useState('')
   const [activeTab, setActiveTab] = useState('player') // 'player' | 'settings'
   const [config, setConfig] = useState({})
+  const [channels, setChannels] = useState([])
+
+  const fetchChannels = async () => {
+    try {
+      const res = await fetch('/api/channels')
+      if (res.ok) setChannels(await res.json() || [])
+    } catch(err) {}
+  }
+
+  const handleJoinChannel = async (e) => {
+    const channelName = e.target.value;
+    if (!channelName) return;
+    setIsLoading(true);
+    try {
+      await fetch('/api/channels/join', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ channel_name: channelName })
+      });
+      fetchQueue();
+    } catch(err) {}
+    setIsLoading(false);
+  }
 
   const fetchConfig = async () => {
     try {
@@ -76,7 +99,8 @@ function Dashboard() {
             setPlaybackState({
                 position: data.position || 0,
                 is_paused: data.is_paused || false,
-                speed: data.speed || 1.0
+                speed: data.speed || 1.0,
+                current_channel: data.current_channel || ''
             })
         }
         setIsOnline(true)
@@ -93,6 +117,7 @@ function Dashboard() {
     fetchQueue()
     fetchPlaylists()
     fetchConfig()
+    fetchChannels()
     
     // Configurar WebSocket
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -118,7 +143,8 @@ function Dashboard() {
             setPlaybackState({
               position: data.position || 0,
               is_paused: data.is_paused || false,
-              speed: data.speed || 1.0
+              speed: data.speed || 1.0,
+              current_channel: data.current_channel || ''
             });
             setIsOnline(true);
           }
@@ -208,6 +234,22 @@ function Dashboard() {
         </div>
         
         <div className="flex gap-4 items-center">
+          {/* Channel Selector */}
+          <div className="hidden md:flex items-center gap-2 bg-slate-800/80 px-3 py-1.5 rounded-full border border-slate-700">
+            <span className="text-xs text-slate-400 font-medium">Canal:</span>
+            <select 
+              className="bg-transparent text-sm text-white font-medium outline-none cursor-pointer"
+              value={playbackState.current_channel || ''}
+              onChange={handleJoinChannel}
+              disabled={isLoading || channels.length === 0}
+            >
+              <option value="" disabled>Seleccionar...</option>
+              {channels.map(ch => (
+                <option key={ch.id} value={ch.name} className="bg-slate-800">{ch.name}</option>
+              ))}
+            </select>
+          </div>
+          
         {isOnline ? (
           <div className="flex items-center gap-2 text-sm text-emerald-400 font-medium px-3 py-1.5 bg-emerald-400/10 rounded-full border border-emerald-400/20">
             <span className="relative flex h-2.5 w-2.5">

@@ -7,14 +7,14 @@ This document outlines the planned features, enhancements, and upcoming versions
 ### v1.1.0
 - **Web Authentication & Setup:** Added a secure username/password authentication system. The first time the Web UI is accessed, it prompts the user to create an admin account. This allows the dashboard to be exposed to the internet safely without touching the terminal.
 
-## Upcoming Versions
-
-
-### v1.2
+### v1.2.x
 - **System Tray Icon (Windows):** Add a background tray icon in the Windows taskbar. This will allow the user to easily see if the bot is running, right-click to open the dashboard, or stop the bot entirely, improving the UX for background processes.
 
-### v1.3
+### v1.3.0
 - **Multi-channel Support:** Allow changing the Mumble channel directly from the Web Dashboard without needing to configure it manually and restart the bot.
+
+## Upcoming Versions
+
 
 ## Future Enhancements (Ideas & Backlog)
 ### v1.4
