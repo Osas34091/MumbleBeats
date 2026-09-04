@@ -192,8 +192,16 @@ func init() {
 		{
 			Name:        "volume",
 			Aliases:     []string{"v", "vol"},
-			Description: "Ajusta el volumen del bot (ej: !volume 50).",
+			Description: "Ajusta el volumen (0 a 100).",
+			AdminOnly:   true,
 			Handler:     cmdVolume,
+		},
+		{
+			Name:        "summon",
+			Aliases:     []string{"move"},
+			Description: "Llama al bot a tu canal actual.",
+			AdminOnly:   true,
+			Handler:     cmdSummon,
 		},
 		{
 			Name:        "help",
@@ -590,4 +598,17 @@ func cmdVolume(b *BotClient, e *gumble.TextMessageEvent, args []string) {
 		b.Player.BaseVolume = newVol
 	}
 	e.Sender.Send(fmt.Sprintf("🔊 Volumen ajustado al <b>%d%%</b>", vol))
+}
+
+func cmdSummon(b *BotClient, e *gumble.TextMessageEvent, args []string) {
+	if e.Sender.Channel != nil {
+		b.Client.Self.Move(e.Sender.Channel)
+		// Update config to remember the channel
+		b.Config.Channel = e.Sender.Channel.Name
+		config.SaveConfig(b.Config, "config.json")
+		
+		e.Sender.Send(fmt.Sprintf("Me he movido a tu canal: %s", e.Sender.Channel.Name))
+	} else {
+		e.Sender.Send("No estás en ningún canal válido.")
+	}
 }
