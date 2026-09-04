@@ -32,7 +32,7 @@ MumbleBeats is a modern, self-contained music bot for **Mumble** servers, writte
 
 ---
 
-## Installation (Under 1 minute!)
+## Installation
 
 1. Go to **[Releases](https://github.com/Osas34091/MumbleBeats/releases/latest)** and download the executable for your system:
    - `mumblebeats-windows-amd64.exe` → Windows
