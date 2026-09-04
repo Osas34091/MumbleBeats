@@ -10,7 +10,7 @@ type Config struct {
 	ServerPort    string   `json:"server_port"`
 	Username      string   `json:"username"`
 	Password      string   `json:"password"`
-	Channel       string   `json:"channel"`
+	ChannelID     uint32   `json:"channel_id"`
 	Insecure      bool     `json:"insecure"`
 	Admins        []string `json:"admins"`
 }

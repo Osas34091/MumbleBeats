@@ -20,6 +20,7 @@ type Track struct {
 	Status    string    `json:"status"`
 	AddedBy   string    `json:"added_by"`
 	Thumbnail string    `json:"thumbnail"`
+	Duration  float64   `json:"duration"`
 	CreatedAt time.Time `json:"created_at"`
 }
 
@@ -96,20 +97,23 @@ func InitDB(filepath string) error {
 	// Si la columna position no existe, la añadimos (migración sencilla)
 	DB.Exec("ALTER TABLE queue ADD COLUMN position INTEGER DEFAULT 0")
 
+	// Migración para añadir duración si no existe
+	DB.Exec("ALTER TABLE queue ADD COLUMN duration REAL DEFAULT 0;")
+
 	// Poner todas las canciones en pending a failed por seguridad (si se cerró de golpe)
 	_, _ = DB.Exec("UPDATE queue SET status = 'failed' WHERE status = 'playing'")
 
 	return nil
 }
 
-func AddTrack(title, url, trackType, addedBy, thumbnail string) (int64, error) {
+func AddTrack(title, url, trackType, addedBy, thumbnail string, duration float64) (int64, error) {
 	// Obtener la posición máxima actual
 	var maxPos int
 	DB.QueryRow("SELECT COALESCE(MAX(position), 0) FROM queue").Scan(&maxPos)
 	newPos := maxPos + 1
 
-	res, err := DB.Exec("INSERT INTO queue (title, url, type, status, added_by, thumbnail, position) VALUES (?, ?, ?, 'pending', ?, ?, ?)",
-		title, url, trackType, addedBy, thumbnail, newPos)
+	res, err := DB.Exec("INSERT INTO queue (title, url, type, status, added_by, thumbnail, position, duration) VALUES (?, ?, ?, 'pending', ?, ?, ?, ?)",
+		title, url, trackType, addedBy, thumbnail, newPos, duration)
 	if err != nil {
 		return 0, err
 	}
@@ -117,10 +121,10 @@ func AddTrack(title, url, trackType, addedBy, thumbnail string) (int64, error) {
 }
 
 func GetNextPending() (*Track, error) {
-	row := DB.QueryRow("SELECT id, title, url, type, status, added_by, thumbnail, created_at FROM queue WHERE status = 'pending' ORDER BY position ASC, id ASC LIMIT 1")
+	row := DB.QueryRow("SELECT id, title, url, type, status, added_by, thumbnail, duration, created_at FROM queue WHERE status = 'pending' ORDER BY position ASC, id ASC LIMIT 1")
 	
 	var track Track
-	err := row.Scan(&track.ID, &track.Title, &track.URL, &track.Type, &track.Status, &track.AddedBy, &track.Thumbnail, &track.CreatedAt)
+	err := row.Scan(&track.ID, &track.Title, &track.URL, &track.Type, &track.Status, &track.AddedBy, &track.Thumbnail, &track.Duration, &track.CreatedAt)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil // No hay más canciones
@@ -141,7 +145,7 @@ func MarkPlayed(id int64) error {
 }
 
 func GetQueue(limit int) ([]*Track, error) {
-	rows, err := DB.Query("SELECT id, title, url, type, status, added_by, thumbnail, created_at FROM queue WHERE status IN ('pending', 'playing') ORDER BY position ASC, id ASC LIMIT ?", limit)
+	rows, err := DB.Query("SELECT id, title, url, type, status, added_by, thumbnail, duration, created_at FROM queue WHERE status IN ('pending', 'playing') ORDER BY position ASC, id ASC LIMIT ?", limit)
 	if err != nil {
 		return nil, err
 	}
@@ -150,7 +154,7 @@ func GetQueue(limit int) ([]*Track, error) {
 	var tracks []*Track
 	for rows.Next() {
 		var t Track
-		if err := rows.Scan(&t.ID, &t.Title, &t.URL, &t.Type, &t.Status, &t.AddedBy, &t.Thumbnail, &t.CreatedAt); err != nil {
+		if err := rows.Scan(&t.ID, &t.Title, &t.URL, &t.Type, &t.Status, &t.AddedBy, &t.Thumbnail, &t.Duration, &t.CreatedAt); err != nil {
 			return nil, err
 		}
 		tracks = append(tracks, &t)

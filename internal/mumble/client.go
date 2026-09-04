@@ -48,9 +48,9 @@ func (b *BotClient) Connect() error {
 			}
 
 			// Unirse al canal configurado
-			if b.Config.Channel != "" {
-				channel := e.Client.Channels.Find(b.Config.Channel)
-				if channel != nil {
+			if b.Config.ChannelID != 0 {
+				channel, exists := e.Client.Channels[b.Config.ChannelID]
+				if exists {
 					e.Client.Self.Move(channel)
 				}
 			}
@@ -203,6 +203,6 @@ func (b *BotClient) MoveToChannel(id uint32) error {
 	}
 	b.Client.Self.Move(ch)
 	
-	b.Config.Channel = ch.Name
+	b.Config.ChannelID = ch.ID
 	return config.SaveConfig(b.Config, "config.json")
 }

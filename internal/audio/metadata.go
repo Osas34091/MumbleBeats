@@ -19,11 +19,12 @@ import (
 )
 
 type TrackMetadata struct {
-	Title      string `json:"title"`
-	Uploader   string `json:"uploader"`
-	Thumbnail  string `json:"thumbnail"`
-	WebpageURL string `json:"webpage_url"`
-	URL        string `json:"url"` // El stream de audio
+	Title      string  `json:"title"`
+	Uploader   string  `json:"uploader"`
+	Thumbnail  string  `json:"thumbnail"`
+	WebpageURL string  `json:"webpage_url"`
+	URL        string  `json:"url"` // El stream de audio
+	Duration   float64 `json:"duration"`
 }
 
 // FetchMetadata obtiene la metadata de un video usando una URL o una búsqueda.

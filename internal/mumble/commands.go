@@ -262,7 +262,7 @@ func cmdPlay(b *BotClient, e *gumble.TextMessageEvent, args []string) {
 			}
 			e.Sender.Send(fmt.Sprintf("Playlist encontrada con %d canciones. Añadiendo a la cola...", len(tracks)))
 			for i, t := range tracks {
-				id, err := db.AddTrack(t.Title, t.WebpageURL, "youtube", senderName, t.Thumbnail)
+				id, err := db.AddTrack(t.Title, t.WebpageURL, "youtube", senderName, t.Thumbnail, t.Duration)
 				if i == 0 {
 					if err == nil {
 						imgTag := ""
@@ -284,7 +284,7 @@ func cmdPlay(b *BotClient, e *gumble.TextMessageEvent, args []string) {
 		if !isURL {
 			foundPath, foundName, errLocal := db.FindLocalFile(query)
 			if errLocal == nil {
-				id, err := db.AddTrack(foundName, foundPath, "local", senderName, "")
+				id, err := db.AddTrack(foundName, foundPath, "local", senderName, "", 0)
 				if err != nil {
 					e.Sender.Send(fmt.Sprintf("Error añadiendo a la cola: %v", err))
 				} else {
@@ -300,7 +300,7 @@ func cmdPlay(b *BotClient, e *gumble.TextMessageEvent, args []string) {
 			return
 		}
 
-		id, err := db.AddTrack(metadata.Title, metadata.WebpageURL, "youtube", senderName, metadata.Thumbnail)
+		id, err := db.AddTrack(metadata.Title, metadata.WebpageURL, "youtube", senderName, metadata.Thumbnail, metadata.Duration)
 		if err != nil {
 			e.Sender.Send(fmt.Sprintf("Error añadiendo a la cola: %v", err))
 		} else {
@@ -339,7 +339,7 @@ func cmdRadio(b *BotClient, e *gumble.TextMessageEvent, args []string) {
 	
 	// Si es una URL, agregarla directamente
 	if strings.HasPrefix(query, "http://") || strings.HasPrefix(query, "https://") {
-		id, err := db.AddTrack("Radio", query, "radio", getSenderName(e), "")
+		id, err := db.AddTrack("Radio", query, "radio", getSenderName(e), "", 0)
 		if err != nil {
 			e.Sender.Send(fmt.Sprintf("Error añadiendo radio: %v", err))
 		} else {
@@ -365,7 +365,7 @@ func cmdRadio(b *BotClient, e *gumble.TextMessageEvent, args []string) {
 		
 		// Usar el primer resultado
 		station := stations[0]
-		id, err := db.AddTrack("Radio: "+station.Name, station.URL, "radio", getSenderName(e), station.Favicon)
+		id, err := db.AddTrack("Radio: "+station.Name, station.URL, "radio", getSenderName(e), station.Favicon, 0)
 		if err != nil {
 			e.Sender.Send(fmt.Sprintf("Error añadiendo emisora: %v", err))
 		} else {
@@ -386,7 +386,7 @@ func cmdPlayLocal(b *BotClient, e *gumble.TextMessageEvent, args []string) {
 	if err != nil {
 		e.Sender.Send(fmt.Sprintf("Error: %v", err))
 	} else {
-		id, err := db.AddTrack(foundName, foundPath, "local", getSenderName(e), "")
+		id, err := db.AddTrack(foundName, foundPath, "local", getSenderName(e), "", 0)
 		if err != nil {
 			e.Sender.Send(fmt.Sprintf("Error añadiendo a la cola: %v", err))
 		} else {

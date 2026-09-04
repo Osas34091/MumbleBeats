@@ -1,6 +1,49 @@
 import { useState, useEffect } from 'react'
 import { Play, Pause, SkipForward, Square, Trash2, Search, Music, ListMusic, User, Volume2, Volume, Volume1, VolumeX, Settings, Save } from 'lucide-react'
 
+const formatTime = (seconds) => {
+  if (!seconds || isNaN(seconds)) return "0:00";
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${m}:${s < 10 ? '0' : ''}${s}`;
+};
+
+const CustomSelect = ({ value, options, onChange, label, disabled }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const selectedOption = options.find(o => o.value == value) || options[0];
+
+  return (
+    <div className="relative">
+      <button 
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        disabled={disabled}
+        className="flex items-center justify-between w-full gap-2 bg-slate-800/80 hover:bg-slate-700/80 px-3 py-1 rounded-lg border border-slate-700 transition-colors disabled:opacity-50 text-sm min-w-[140px]"
+      >
+        <span className="text-white font-medium truncate">{selectedOption?.label || value}</span>
+        <svg className={`w-4 h-4 text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+      </button>
+      
+      {isOpen && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)}></div>
+          <div className="absolute left-0 mt-2 w-full min-w-[140px] bg-slate-800 border border-slate-700 rounded-xl shadow-xl z-20 overflow-hidden py-1">
+            {options.map(opt => (
+              <button
+                key={opt.value}
+                onClick={() => { onChange(opt.value); setIsOpen(false); }}
+                className={`w-full text-left px-4 py-2 text-sm transition-colors ${value == opt.value ? 'bg-primary-500/20 text-primary-400 font-medium' : 'text-slate-300 hover:bg-slate-700/50 hover:text-white'}`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
 function Dashboard() {
   const [queue, setQueue] = useState([])
   const [searchQuery, setSearchQuery] = useState('')
@@ -223,7 +266,7 @@ function Dashboard() {
   return (
     <div className="max-w-6xl mx-auto p-4 md:p-8">
       {/* Header */}
-      <header className="flex items-center justify-between mb-8 glass-panel p-4 rounded-2xl">
+      <header className="flex items-center justify-between mb-8 glass-panel p-4 rounded-2xl relative z-40">
         <div className="flex items-center gap-3">
           <div className="bg-primary-600 p-2 rounded-xl text-white shadow-lg shadow-primary-500/30">
             <Music size={24} />
@@ -366,8 +409,32 @@ function Dashboard() {
                     <span>Añadido por <strong className="text-slate-200">{currentTrack.added_by}</strong></span>
                   </div>
                   
+                  {/* Controles de barra de progreso */}
+                  {currentTrack.duration > 0 && (
+                    <div className="w-full mt-2 mb-2">
+                      <div className="flex justify-between text-[10px] text-slate-400 mb-1.5 font-bold uppercase tracking-wider">
+                        <span>{formatTime(playbackState.position)}</span>
+                        <span>{formatTime(currentTrack.duration)}</span>
+                      </div>
+                      <div 
+                        className="w-full h-2.5 bg-slate-800 rounded-full cursor-pointer relative overflow-hidden group border border-slate-700/50"
+                        onClick={(e) => {
+                          const bounds = e.currentTarget.getBoundingClientRect();
+                          const pct = (e.clientX - bounds.left) / bounds.width;
+                          const newPos = pct * currentTrack.duration;
+                          fetch('/api/seek', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({seconds: newPos})});
+                        }}
+                      >
+                        <div 
+                          className="absolute top-0 left-0 h-full bg-primary-500 rounded-full transition-all duration-1000 ease-linear shadow-[0_0_10px_rgba(14,165,233,0.5)] group-hover:bg-primary-400"
+                          style={{ width: `${Math.min(100, (playbackState.position / currentTrack.duration) * 100)}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Controls */}
-                  <div className="flex flex-col gap-4 w-full mt-4">
+                  <div className="flex flex-col gap-4 w-full mt-2">
                     <div className="flex items-center justify-center md:justify-start gap-3">
                       <button 
                         onClick={() => handleCommand('stop')}
@@ -428,36 +495,37 @@ function Dashboard() {
                     {/* Advanced Controls */}
                     <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-sm mt-2">
                       <div className="flex items-center gap-2">
-                        <span className="text-slate-400 font-medium">Velocidad:</span>
-                        <select 
-                          className="bg-slate-800 border border-slate-700 rounded-lg text-slate-200 px-2 py-1 outline-none focus:ring-1 focus:ring-primary-500"
+                        <span className="text-slate-400 font-medium text-xs">Velocidad:</span>
+                        <CustomSelect
                           value={playbackState.speed}
-                          onChange={(e) => {
-                            fetch('/api/speed', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({speed: parseFloat(e.target.value)})});
+                          options={[
+                            {value: 0.5, label: "0.5x"},
+                            {value: 0.75, label: "0.75x"},
+                            {value: 1, label: "1.0x"},
+                            {value: 1.25, label: "1.25x"},
+                            {value: 1.5, label: "1.5x"},
+                            {value: 2, label: "2.0x"}
+                          ]}
+                          onChange={(val) => {
+                            fetch('/api/speed', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({speed: parseFloat(val)})});
                           }}
-                        >
-                          <option value="0.5">0.5x</option>
-                          <option value="0.75">0.75x</option>
-                          <option value="1">1.0x</option>
-                          <option value="1.25">1.25x</option>
-                          <option value="1.5">1.5x</option>
-                          <option value="2">2.0x</option>
-                        </select>
+                        />
                       </div>
                       
                       <div className="flex items-center gap-2">
-                        <span className="text-slate-400 font-medium">Filtro DSP:</span>
-                        <select 
-                          className="bg-slate-800 border border-slate-700 rounded-lg text-slate-200 px-2 py-1 outline-none focus:ring-1 focus:ring-primary-500"
-                          onChange={(e) => {
-                            fetch('/api/filter', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({filter: e.target.value})});
+                        <span className="text-slate-400 font-medium text-xs">Filtro DSP:</span>
+                        <CustomSelect
+                          value="off"
+                          options={[
+                            {value: "off", label: "Ninguno (Normal)"},
+                            {value: "nightcore", label: "Nightcore"},
+                            {value: "bassboost", label: "Bass Boost"},
+                            {value: "echo", label: "Echo"}
+                          ]}
+                          onChange={(val) => {
+                            fetch('/api/filter', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({filter: val})});
                           }}
-                        >
-                          <option value="off">Ninguno (Normal)</option>
-                          <option value="nightcore">Nightcore</option>
-                          <option value="bassboost">Bass Boost</option>
-                          <option value="echo">Echo</option>
-                        </select>
+                        />
                       </div>
                       
                       <div className="flex items-center gap-3 bg-slate-800/50 px-3 py-1.5 rounded-xl border border-slate-700/50">
@@ -727,7 +795,7 @@ function Dashboard() {
               server_port: e.target.server_port.value,
               username: e.target.username.value,
               password: e.target.password.value,
-              channel: e.target.channel.value,
+              channel_id: parseInt(e.target.channel_id.value) || 0,
               insecure: e.target.insecure.checked,
               admins: e.target.admins.value.split(',').map(s => s.trim()).filter(Boolean)
             }
@@ -765,7 +833,10 @@ function Dashboard() {
           
           <div>
             <label className="block text-sm font-medium text-slate-400 mb-1">Canal (Por Defecto)</label>
-            <input name="channel" defaultValue={config.channel || ''} className="w-full bg-slate-800/50 border border-slate-700/50 rounded-xl py-2 px-4 text-white placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-primary-500" />
+            <select name="channel_id" defaultValue={config.channel_id || 0} className="w-full bg-slate-800/50 border border-slate-700/50 rounded-xl py-2 px-4 text-white placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-primary-500">
+              <option value="0">Root (Por Defecto)</option>
+              {channels.map(ch => <option key={ch.id} value={ch.id}>{ch.name}</option>)}
+            </select>
           </div>
           
           <div>

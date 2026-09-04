@@ -80,6 +80,7 @@ func (s *Server) setupRoutes() {
 			pr.Post("/speed", s.handleSpeed)
 			pr.Post("/filter", s.handleFilter)
 			pr.Post("/volume", s.handleVolume)
+			pr.Post("/seek", s.handleSeek)
 			pr.Post("/shutdown", s.handleShutdown)
 			pr.Get("/config", s.handleGetConfig)
 			pr.Post("/config", s.handleSaveConfig)
@@ -215,7 +216,7 @@ func (s *Server) handlePlay(w http.ResponseWriter, r *http.Request) {
 		foundPath, foundName, err := db.FindLocalFile(query)
 		if err == nil {
 			// Encontrado localmente!
-			id, addErr := db.AddTrack(foundName, foundPath, "local", "Dashboard", "")
+			id, addErr := db.AddTrack(foundName, foundPath, "local", "Dashboard", "", 0)
 			if addErr != nil {
 				http.Error(w, addErr.Error(), http.StatusInternalServerError)
 				return
@@ -237,7 +238,7 @@ func (s *Server) handlePlay(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := db.AddTrack(metadata.Title, metadata.WebpageURL, "youtube", "Dashboard", metadata.Thumbnail)
+	id, err := db.AddTrack(metadata.Title, metadata.WebpageURL, "youtube", "Dashboard", metadata.Thumbnail, metadata.Duration)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -448,10 +449,31 @@ func (s *Server) handleFilter(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	
-	if s.Bot != nil && s.Bot.Player != nil {
-		s.Bot.Player.ApplyFilter(req.Filter)
+	if s.Bot.Player != nil {
+		s.Bot.Player.SetFilter(req.Filter)
+		w.WriteHeader(http.StatusOK)
+		s.broadcastState()
+	} else {
+		http.Error(w, "Reproductor no activo", http.StatusBadRequest)
 	}
-	w.WriteHeader(http.StatusOK)
+}
+
+func (s *Server) handleSeek(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Seconds float64 `json:"seconds"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if s.Bot.Player != nil {
+		s.Bot.Player.Seek(int(req.Seconds))
+		w.WriteHeader(http.StatusOK)
+		s.broadcastState()
+	} else {
+		http.Error(w, "Reproductor no activo", http.StatusBadRequest)
+	}
 }
 
 func (s *Server) handleVolume(w http.ResponseWriter, r *http.Request) {
