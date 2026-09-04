@@ -412,7 +412,7 @@ func (s *Server) handleUpload(w http.ResponseWriter, r *http.Request) {
 // Control PRO
 func (s *Server) handleSeek(w http.ResponseWriter, r *http.Request) {
 	var req struct {
-		Seconds int `json:"seconds"`
+		Seconds float64 `json:"seconds"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -420,7 +420,7 @@ func (s *Server) handleSeek(w http.ResponseWriter, r *http.Request) {
 	}
 	
 	if s.Bot != nil && s.Bot.Player != nil {
-		s.Bot.Player.Seek(req.Seconds)
+		s.Bot.Player.Seek(int(req.Seconds))
 	}
 	w.WriteHeader(http.StatusOK)
 }
@@ -449,31 +449,10 @@ func (s *Server) handleFilter(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	
-	if s.Bot.Player != nil {
-		s.Bot.Player.SetFilter(req.Filter)
-		w.WriteHeader(http.StatusOK)
-		s.broadcastState()
-	} else {
-		http.Error(w, "Reproductor no activo", http.StatusBadRequest)
+	if s.Bot != nil && s.Bot.Player != nil {
+		s.Bot.Player.ApplyFilter(req.Filter)
 	}
-}
-
-func (s *Server) handleSeek(w http.ResponseWriter, r *http.Request) {
-	var req struct {
-		Seconds float64 `json:"seconds"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	if s.Bot.Player != nil {
-		s.Bot.Player.Seek(int(req.Seconds))
-		w.WriteHeader(http.StatusOK)
-		s.broadcastState()
-	} else {
-		http.Error(w, "Reproductor no activo", http.StatusBadRequest)
-	}
+	w.WriteHeader(http.StatusOK)
 }
 
 func (s *Server) handleVolume(w http.ResponseWriter, r *http.Request) {

@@ -61,7 +61,7 @@ func (s *Server) handleSetup(w http.ResponseWriter, r *http.Request) {
 	s.Bot.Config.ServerPort = req.MumblePort
 	s.Bot.Config.Username = req.MumbleUsername
 	s.Bot.Config.Password = req.MumblePassword
-	s.Bot.Config.Channel = req.MumbleChannel
+	s.Bot.Config.ChannelID = 0
 
 	config.SaveConfig(s.Bot.Config, "config.json")
 	
