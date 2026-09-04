@@ -259,7 +259,7 @@ func LoadPlaylist(name string, addedBy string) error {
 	rows.Close() // Close BEFORE calling AddTrack to prevent SQLITE_BUSY
 	
 	for _, t := range tracks {
-		_, err := AddTrack(t.title, t.url, t.trackType, addedBy, t.thumbnail)
+		_, err := AddTrack(t.title, t.url, t.trackType, addedBy, t.thumbnail, 0)
 		if err != nil {
 			fmt.Printf("Error adding track from playlist: %v\n", err)
 		}

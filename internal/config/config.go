@@ -20,7 +20,7 @@ var DefaultConfig = Config{
 	ServerPort:    "64738",
 	Username:      "MumbleBeats",
 	Password:      "",
-	Channel:       "Root",
+	ChannelID:     0,
 	Insecure:      true,
 	Admins:        []string{},
 }
