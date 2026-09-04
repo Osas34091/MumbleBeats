@@ -193,16 +193,16 @@ func (b *BotClient) GetChannels() []ChannelInfo {
 	return list
 }
 
-func (b *BotClient) MoveToChannel(name string) error {
+func (b *BotClient) MoveToChannel(id uint32) error {
 	if b.Client == nil {
 		return fmt.Errorf("bot is not connected")
 	}
-	ch := b.Client.Channels.Find(name)
-	if ch == nil {
-		return fmt.Errorf("channel not found: %s", name)
+	ch, exists := b.Client.Channels[id]
+	if !exists {
+		return fmt.Errorf("channel not found with ID: %d", id)
 	}
 	b.Client.Self.Move(ch)
 	
-	b.Config.Channel = name
+	b.Config.Channel = ch.Name
 	return config.SaveConfig(b.Config, "config.json")
 }

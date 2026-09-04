@@ -169,8 +169,10 @@ func (s *Server) GetState() map[string]interface{} {
 	}
 
 	var currentChannel string
+	var currentChannelID uint32
 	if s.Bot.Client != nil && s.Bot.Client.Self != nil && s.Bot.Client.Self.Channel != nil {
 		currentChannel = s.Bot.Client.Self.Channel.Name
+		currentChannelID = s.Bot.Client.Self.Channel.ID
 	}
 
 	return map[string]interface{}{
@@ -182,6 +184,7 @@ func (s *Server) GetState() map[string]interface{} {
 		"speed":           speed,
 		"volume":          volume,
 		"current_channel": currentChannel,
+		"current_channel_id": currentChannelID,
 	}
 }
 
@@ -520,14 +523,14 @@ func (s *Server) handleGetChannels(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleJoinChannel(w http.ResponseWriter, r *http.Request) {
 	var req struct {
-		ChannelName string `json:"channel_name"`
+		ChannelID uint32 `json:"channel_id"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	
-	err := s.Bot.MoveToChannel(req.ChannelName)
+	err := s.Bot.MoveToChannel(req.ChannelID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

@@ -15,6 +15,7 @@ function Dashboard() {
   const [activeTab, setActiveTab] = useState('player') // 'player' | 'settings'
   const [config, setConfig] = useState({})
   const [channels, setChannels] = useState([])
+  const [isChannelDropdownOpen, setIsChannelDropdownOpen] = useState(false)
 
   const fetchChannels = async () => {
     try {
@@ -23,15 +24,15 @@ function Dashboard() {
     } catch(err) {}
   }
 
-  const handleJoinChannel = async (e) => {
-    const channelName = e.target.value;
-    if (!channelName) return;
+  const handleJoinChannel = async (channelId) => {
+    setIsChannelDropdownOpen(false);
+    if (channelId === undefined) return;
     setIsLoading(true);
     try {
       await fetch('/api/channels/join', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ channel_name: channelName })
+        body: JSON.stringify({ channel_id: parseInt(channelId) })
       });
       fetchQueue();
     } catch(err) {}
@@ -100,7 +101,8 @@ function Dashboard() {
                 position: data.position || 0,
                 is_paused: data.is_paused || false,
                 speed: data.speed || 1.0,
-                current_channel: data.current_channel || ''
+                current_channel: data.current_channel || '',
+                current_channel_id: data.current_channel_id || 0
             })
         }
         setIsOnline(true)
@@ -144,7 +146,8 @@ function Dashboard() {
               position: data.position || 0,
               is_paused: data.is_paused || false,
               speed: data.speed || 1.0,
-              current_channel: data.current_channel || ''
+              current_channel: data.current_channel || '',
+              current_channel_id: data.current_channel_id || 0
             });
             setIsOnline(true);
           }
@@ -235,19 +238,35 @@ function Dashboard() {
         
         <div className="flex gap-4 items-center">
           {/* Channel Selector */}
-          <div className="hidden md:flex items-center gap-2 bg-slate-800/80 px-3 py-1.5 rounded-full border border-slate-700">
-            <span className="text-xs text-slate-400 font-medium">Canal:</span>
-            <select 
-              className="bg-transparent text-sm text-white font-medium outline-none cursor-pointer"
-              value={playbackState.current_channel || ''}
-              onChange={handleJoinChannel}
+          <div className="relative hidden md:block">
+            <button 
+              onClick={() => setIsChannelDropdownOpen(!isChannelDropdownOpen)}
               disabled={isLoading || channels.length === 0}
+              className="flex items-center gap-2 bg-slate-800/80 hover:bg-slate-700/80 px-4 py-1.5 rounded-full border border-slate-700 transition-colors disabled:opacity-50"
             >
-              <option value="" disabled>Seleccionar...</option>
-              {channels.map(ch => (
-                <option key={ch.id} value={ch.name} className="bg-slate-800">{ch.name}</option>
-              ))}
-            </select>
+              <span className="text-xs text-slate-400 font-medium">Canal:</span>
+              <span className="text-sm text-white font-semibold truncate max-w-[120px]">
+                {playbackState.current_channel || 'Seleccionar...'}
+              </span>
+              <svg className={`w-4 h-4 text-slate-400 transition-transform ${isChannelDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+            </button>
+            
+            {isChannelDropdownOpen && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setIsChannelDropdownOpen(false)}></div>
+                <div className="absolute right-0 mt-2 w-48 bg-slate-800 border border-slate-700 rounded-xl shadow-xl z-20 overflow-hidden py-1">
+                  {channels.map(ch => (
+                    <button
+                      key={ch.id}
+                      onClick={() => handleJoinChannel(ch.id)}
+                      className={`w-full text-left px-4 py-2 text-sm transition-colors ${playbackState.current_channel_id === ch.id ? 'bg-primary-500/20 text-primary-400 font-medium' : 'text-slate-300 hover:bg-slate-700/50 hover:text-white'}`}
+                    >
+                      {ch.name}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
           
         {isOnline ? (
