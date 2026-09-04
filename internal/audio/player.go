@@ -289,6 +289,11 @@ func (p *Player) PlayDirectStream(ctx context.Context, streamURL string) error {
 		cmdFFmpeg.Process.Kill() // Matar el proceso anterior antes de reiniciar o salir
 		cmdFFmpeg.Wait()
 		
+		// Debug logging for ffmpeg
+		if errOut.Len() > 0 && p.Position.Seconds() < 2 {
+			fmt.Printf("⚠️ FFmpeg se detuvo rápidamente. Stderr:\n%s\n", errOut.String())
+		}
+		
 		if !restarting {
 			// Si no estamos reiniciando, significa que la canción terminó
 			return nil
