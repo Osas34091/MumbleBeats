@@ -13,6 +13,7 @@ type Config struct {
 	ChannelID     uint32   `json:"channel_id"`
 	Insecure      bool     `json:"insecure"`
 	Admins        []string `json:"admins"`
+	Language      string   `json:"language"`
 }
 
 var DefaultConfig = Config{
@@ -23,6 +24,7 @@ var DefaultConfig = Config{
 	ChannelID:     0,
 	Insecure:      true,
 	Admins:        []string{},
+	Language:      "en",
 }
 
 func LoadConfig(filename string) (*Config, error) {

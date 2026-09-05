@@ -1,11 +1,53 @@
 import { useState, useEffect } from 'react'
-import { Play, Pause, SkipForward, Square, Trash2, Search, Music, ListMusic, User, Volume2, Volume, Volume1, VolumeX, Settings, Save } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
+import { Play, Pause, SkipForward, Square, Trash2, Search, Music, ListMusic, User, Volume2, Volume, Volume1, VolumeX, Settings, Save, GripVertical } from 'lucide-react'
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 
 const formatTime = (seconds) => {
   if (!seconds || isNaN(seconds)) return "0:00";
   const m = Math.floor(seconds / 60);
   const s = Math.floor(seconds % 60);
   return `${m}:${s < 10 ? '0' : ''}${s}`;
+};
+
+const SortableItem = ({ id, index, track, onRemove }) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 10 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} className={`flex items-center gap-4 bg-slate-800/50 p-4 rounded-xl border ${isDragging ? 'border-primary-500 shadow-xl shadow-primary-500/20 opacity-80' : 'border-slate-700/50'}`}>
+      <div {...attributes} {...listeners} className="text-slate-500 hover:text-white cursor-grab active:cursor-grabbing p-1">
+        <GripVertical className="w-5 h-5" />
+      </div>
+      <div className="text-slate-400 font-mono w-6">{index}.</div>
+      {track.thumbnail && (
+        <img src={track.thumbnail} alt="thumb" className="w-12 h-12 rounded-lg object-cover bg-slate-800 flex-shrink-0" />
+      )}
+      <div className="flex-1 min-w-0">
+        <h4 className="text-white font-medium truncate">{track.title}</h4>
+        <div className="flex items-center gap-2 mt-1">
+          <User className="w-3 h-3 text-slate-400" />
+          <p className="text-sm text-slate-400 truncate">{track.added_by}</p>
+        </div>
+      </div>
+      <div className="text-sm text-slate-400 tabular-nums">
+        {formatTime(track.duration)}
+      </div>
+      <button
+        onClick={() => onRemove(track.id)}
+        className="p-2 text-slate-400 hover:text-red-400 hover:bg-slate-700 rounded-lg transition-colors"
+      >
+        <Trash2 className="w-5 h-5" />
+      </button>
+    </div>
+  );
 };
 
 const CustomSelect = ({ value, options, onChange, label, disabled }) => {
@@ -45,6 +87,15 @@ const CustomSelect = ({ value, options, onChange, label, disabled }) => {
 };
 
 function Dashboard() {
+  const { t, i18n } = useTranslation();
+  
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
   const [queue, setQueue] = useState([])
   const [searchQuery, setSearchQuery] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -59,6 +110,28 @@ function Dashboard() {
   const [config, setConfig] = useState({})
   const [channels, setChannels] = useState([])
   const [isChannelDropdownOpen, setIsChannelDropdownOpen] = useState(false)
+
+  const handleDragEnd = async (event) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      const oldIndex = queue.findIndex((item) => item.id === active.id);
+      const newIndex = queue.findIndex((item) => item.id === over.id);
+      
+      const newQueue = arrayMove(queue, oldIndex, newIndex);
+      setQueue(newQueue);
+      
+      const order = newQueue.map(t => t.id);
+      try {
+        await fetch('/api/queue/reorder', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ order })
+        });
+      } catch (err) {
+        console.error("Failed to save reorder", err);
+      }
+    }
+  };
 
   const fetchChannels = async () => {
     try {
@@ -85,7 +158,13 @@ function Dashboard() {
   const fetchConfig = async () => {
     try {
       const res = await fetch('/api/config')
-      if (res.ok) setConfig(await res.json())
+      if (res.ok) {
+        const data = await res.json()
+        setConfig(data)
+        if (data.language) {
+          i18n.changeLanguage(data.language)
+        }
+      }
     } catch(err) {}
   }
 
@@ -706,7 +785,7 @@ function Dashboard() {
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-sm font-bold text-slate-400 tracking-widest uppercase flex items-center gap-2">
                 <ListMusic size={16} />
-                Cola de Reproducción ({upcomingTracks.length})
+                {t('dashboard.up_next')} ({upcomingTracks.length})
               </h2>
               {upcomingTracks.length > 0 && (
                 <button
@@ -724,56 +803,16 @@ function Dashboard() {
               {upcomingTracks.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-slate-500 gap-3">
                   <ListMusic size={32} className="opacity-50" />
-                  <p className="text-sm font-medium">No hay más canciones en la cola.</p>
+                  <p className="text-sm font-medium">{t('dashboard.queue_empty')}</p>
                 </div>
               ) : (
-                upcomingTracks.map((track, idx) => (
-                  <div key={track.id} className="group flex items-center gap-4 p-3 rounded-xl hover:bg-slate-800/50 transition-colors border border-transparent hover:border-slate-700/50">
-                    <div className="text-slate-500 font-bold w-4 text-right text-sm group-hover:hidden">
-                      {idx + 1}
-                    </div>
-                    <div className="hidden group-hover:flex flex-col gap-1 w-4 items-center justify-center">
-                      <button 
-                        onClick={() => handleCommand(`queue/${track.id}/up`)}
-                        className="text-slate-400 hover:text-white"
-                        title="Subir"
-                        disabled={idx === 0}
-                      >
-                        <span className="text-[10px]">▲</span>
-                      </button>
-                      <button 
-                        onClick={() => handleCommand(`queue/${track.id}/down`)}
-                        className="text-slate-400 hover:text-white"
-                        title="Bajar"
-                        disabled={idx === upcomingTracks.length - 1}
-                      >
-                        <span className="text-[10px]">▼</span>
-                      </button>
-                    </div>
-                    <div className="w-12 h-12 rounded-lg overflow-hidden shrink-0 bg-slate-800 border border-slate-700/50 relative">
-                      {track.thumbnail ? (
-                        <img src={track.thumbnail} alt="" className="w-full h-full object-cover" />
-                      ) : (
-                        <Music size={20} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-slate-600" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="text-sm font-medium text-slate-200 truncate group-hover:text-white transition-colors">
-                        {track.title}
-                      </h4>
-                      <p className="text-xs text-slate-500 truncate mt-0.5">
-                        Añadido por {track.added_by}
-                      </p>
-                    </div>
-                    <button 
-                      onClick={() => handleRemove(track.id)}
-                      className="hidden group-hover:flex w-8 h-8 items-center justify-center text-slate-500 hover:text-rose-400 rounded-lg hover:bg-rose-500/10 ml-auto"
-                      title="Eliminar de la cola"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                ))
+                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                  <SortableContext items={upcomingTracks.map(t => t.id)} strategy={verticalListSortingStrategy}>
+                    {upcomingTracks.map((track, idx) => (
+                      <SortableItem key={track.id} id={track.id} index={idx + 1} track={track} onRemove={handleRemove} />
+                    ))}
+                  </SortableContext>
+                </DndContext>
               )}
             </div>
           </div>

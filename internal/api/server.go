@@ -85,6 +85,7 @@ func (s *Server) setupRoutes() {
 			pr.Get("/config", s.handleGetConfig)
 			pr.Post("/config", s.handleSaveConfig)
 			pr.Delete("/queue/{id}", s.handleRemoveTrack)
+			pr.Post("/queue/reorder", s.handleReorderQueue)
 			pr.Post("/queue/{id}/up", s.handleMoveUp)
 			pr.Post("/queue/{id}/down", s.handleMoveDown)
 			pr.Get("/playlists", s.handleGetPlaylists)
@@ -266,6 +267,24 @@ func (s *Server) handleClear(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]bool{"success": true})
+}
+
+func (s *Server) handleReorderQueue(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Order []int64 `json:"order"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if err := db.ReorderQueue(req.Order); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]bool{"success": true})
 }

@@ -1,0 +1,51 @@
+{
+  "nav": {
+    "dashboard": "Panel",
+    "playlists": "Listas",
+    "local": "Biblioteca Local"
+  },
+  "dashboard": {
+    "now_playing": "Reproduciendo Ahora",
+    "no_music": "No hay música sonando en este momento.",
+    "up_next": "Siguiente en la cola",
+    "queue_empty": "La cola está vacía. ¡Empieza a añadir música!",
+    "add_music": "Añadir Música",
+    "enter_url": "Ingresa una URL de YouTube, Radio o término de búsqueda...",
+    "add_to_queue": "Añadir a la cola",
+    "upload_mp3": "Subir MP3",
+    "settings": "Configuración",
+    "bot_config": "Configuración del Bot",
+    "mumble_server": "Servidor Mumble",
+    "port": "Puerto",
+    "channel_id": "ID del Canal",
+    "channel_help": "(Únete a un canal y revisa la consola)",
+    "username": "Usuario",
+    "password": "Password (Opcional)",
+    "password_ph": "Dejar en blanco para mantener actual",
+    "language": "Idioma",
+    "save": "Guardar Configuración",
+    "saved": "Guardado exitosamente",
+    "error_save": "Error al guardar configuración"
+  },
+  "playlists": {
+    "title": "Playlists (Listas de reproducción)",
+    "save_current": "Guardar Cola Actual",
+    "enter_name": "Ingresa el nombre de la playlist...",
+    "save_btn": "Guardar Playlist",
+    "your_playlists": "Tus Playlists",
+    "no_playlists": "Aún no has guardado ninguna playlist.",
+    "play": "Reproducir",
+    "delete": "Eliminar",
+    "success_save": "Playlist guardada exitosamente",
+    "success_load": "Playlist añadida a la cola"
+  },
+  "local": {
+    "title": "Biblioteca Local",
+    "subtitle": "Archivos de audio almacenados en la carpeta music del servidor.",
+    "upload": "Subir Archivo",
+    "drag_drop": "Arrastra y suelta un archivo MP3 aquí, o haz clic para seleccionar",
+    "no_files": "No se encontraron archivos locales.",
+    "play": "Reproducir",
+    "delete": "Eliminar"
+  }
+}

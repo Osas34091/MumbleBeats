@@ -1,0 +1,51 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "playlists": "Playlists",
+    "local": "Local Library"
+  },
+  "dashboard": {
+    "now_playing": "Now Playing",
+    "no_music": "No music is playing right now.",
+    "up_next": "Up Next",
+    "queue_empty": "The queue is empty. Start adding some music!",
+    "add_music": "Add Music",
+    "enter_url": "Enter YouTube, Radio URL, or search term...",
+    "add_to_queue": "Add to Queue",
+    "upload_mp3": "Upload MP3",
+    "settings": "Settings",
+    "bot_config": "Bot Configuration",
+    "mumble_server": "Mumble Server",
+    "port": "Port",
+    "channel_id": "Channel ID",
+    "channel_help": "(Join a channel and check the console)",
+    "username": "Username",
+    "password": "Password",
+    "password_ph": "Leave blank to keep current",
+    "language": "Language",
+    "save": "Save Configuration",
+    "saved": "Saved successfully",
+    "error_save": "Error saving configuration"
+  },
+  "playlists": {
+    "title": "Playlists",
+    "save_current": "Save Current Queue",
+    "enter_name": "Enter playlist name...",
+    "save_btn": "Save Playlist",
+    "your_playlists": "Your Playlists",
+    "no_playlists": "You haven't saved any playlists yet.",
+    "play": "Play",
+    "delete": "Delete",
+    "success_save": "Playlist saved successfully",
+    "success_load": "Playlist added to queue"
+  },
+  "local": {
+    "title": "Local Library",
+    "subtitle": "Audio files stored in the server's music folder.",
+    "upload": "Upload File",
+    "drag_drop": "Drag & Drop an MP3 file here or click to select",
+    "no_files": "No local files found.",
+    "play": "Play",
+    "delete": "Delete"
+  }
+}

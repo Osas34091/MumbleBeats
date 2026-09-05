@@ -10,6 +10,7 @@ import (
 	"layeh.com/gumble/gumbleutil"
 	"mumblebeats/internal/audio"
 	"mumblebeats/internal/config"
+	"mumblebeats/internal/i18n"
 )
 
 type BotClient struct {
@@ -56,15 +57,15 @@ func (b *BotClient) Connect() error {
 			}
 
 			// Saludar por texto
-			message := "¡Hola! MumbleBeats conectado y listo para poner música. Escribe !help para ver los comandos."
+			message := i18n.Get(b.Config.Language, "connected")
 			if e.Client.Self.Channel != nil {
 				e.Client.Self.Channel.Send(message, false)
 			}
 		},
 		Disconnect: func(e *gumble.DisconnectEvent) {
-			fmt.Printf("Desconectado de Mumble: %v\n", e.Type)
+			fmt.Printf(i18n.Get(b.Config.Language, "disconnected_mumble")+"\n", e.Type)
 			if e.Type == gumble.DisconnectError {
-				fmt.Printf("Razón del error: %v\n", e.String)
+				fmt.Printf(i18n.Get(b.Config.Language, "error_reason")+"\n", e.String)
 			}
 			b.Client = nil
 			if b.Player != nil {
@@ -98,7 +99,7 @@ func (b *BotClient) Connect() error {
 
 			cmd, exists := commandMap[cmdName]
 			if !exists {
-				e.Sender.Send(fmt.Sprintf("Comando no encontrado: !%s. Usa !help para ver la lista.", cmdName))
+				e.Sender.Send(i18n.Get(b.Config.Language, "cmd_not_found"))
 				return
 			}
 

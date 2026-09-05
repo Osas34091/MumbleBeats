@@ -162,8 +162,41 @@ func GetQueue(limit int) ([]*Track, error) {
 	return tracks, nil
 }
 
-func RemoveTrack(id int) error {
-	_, err := DB.Exec("DELETE FROM queue WHERE id = ?", id)
+func ReorderQueue(order []int64) error {
+	tx, err := DB.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	stmt, err := tx.Prepare("UPDATE queue SET position = ? WHERE id = ?")
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	for i, id := range order {
+		// New position starts from 1
+		_, err = stmt.Exec(i+1, id)
+		if err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit()
+}
+
+func RemoveTrack(id int64) error {
+	// Obtener la posición actual
+	var currentPos int
+	err := DB.QueryRow("SELECT position FROM queue WHERE id = ?", id).Scan(&currentPos)
+	if err != nil { return err }
+	
+	_, err = DB.Exec("DELETE FROM queue WHERE id = ?", id)
+	if err != nil { return err }
+	
+	// Actualizar posiciones de los elementos siguientes
+	_, err = DB.Exec("UPDATE queue SET position = position - 1 WHERE position > ?", currentPos)
 	return err
 }
 

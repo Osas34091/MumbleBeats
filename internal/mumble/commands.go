@@ -7,6 +7,7 @@ import (
 
 	"mumblebeats/internal/audio"
 	"mumblebeats/internal/db"
+	"mumblebeats/internal/i18n"
 
 	"layeh.com/gumble/gumble"
 )
@@ -25,181 +26,83 @@ var BotCommands []Command
 
 func init() {
 	BotCommands = []Command{
-	{
-		Name:        "play",
-		Aliases:     []string{"p"},
-		Description: "Añade una canción de YouTube (por enlace o búsqueda).",
-		Handler:     cmdPlay,
-	},
-	{
-		Name:        "playlist",
-		Description: "Carga una playlist guardada en la base de datos.",
-		Handler:     cmdPlaylist,
-	},
-	{
-		Name:        "radio",
-		Description: "Añade una transmisión de radio en directo.",
-		Handler:     cmdRadio,
-	},
-	{
-		Name:        "playlocal",
-		Description: "Añade un archivo .mp3 de la carpeta local.",
-		Handler:     cmdPlayLocal,
-	},
-	{
-		Name:        "queue",
-		Aliases:     []string{"q"},
-		Description: "Muestra las siguientes 5 canciones en la cola.",
-		Handler:     cmdQueue,
-	},
-	{
-		Name:        "now",
-		Aliases:     []string{"np"},
-		Description: "Muestra la canción actual y su progreso.",
-		Handler:     cmdNow,
-	},
-	{
-		Name:        "pause",
-		Description: "Pausa la canción actual.",
-		AdminOnly:   true,
-		Handler:     cmdPause,
-	},
-	{
-		Name:        "resume",
-		Description: "Reanuda la canción actual.",
-		AdminOnly:   true,
-		Handler:     cmdResume,
-	},
-	{
-		Name:        "skip",
-		Aliases:     []string{"s"},
-		Description: "Salta la canción que está sonando actualmente.",
-		AdminOnly:   true,
-		Handler:     cmdSkip,
-	},
-	{
-		Name:        "clear",
-		Description: "Elimina todas las canciones de la cola.",
-		AdminOnly:   true,
-		Handler:     cmdClear,
-	},
-	{
-		Name:        "stop",
-		Description: "Detiene la música y limpia la cola.",
-		AdminOnly:   true,
-		Handler:     cmdStop,
-	},
-	{
-		Name:        "filter",
-		Description: "Aplica un filtro DSP (nightcore, bassboost, echo, off).",
-		AdminOnly:   true,
-		Handler:     cmdFilter,
-	},
-	{
-		Name:        "seek",
-		Description: "Salta a un segundo específico de la canción (ej: !seek 60).",
-		AdminOnly:   true,
-		Handler:     cmdSeek,
-	},
-	{
-		Name:        "speed",
-		Description: "Cambia la velocidad (ej: !speed 1.5).",
-		AdminOnly:   true,
-		Handler:     cmdSpeed,
-	},
 		{
 			Name:        "play",
 			Aliases:     []string{"p"},
-			Description: "Añade una canción de YouTube (por enlace o búsqueda).",
 			Handler:     cmdPlay,
 		},
 		{
 			Name:        "playlist",
-			Description: "Carga una playlist guardada en la base de datos.",
 			Handler:     cmdPlaylist,
 		},
 		{
 			Name:        "radio",
-			Description: "Añade una transmisión de radio en directo.",
 			Handler:     cmdRadio,
 		},
 		{
 			Name:        "playlocal",
-			Description: "Añade un archivo .mp3 de la carpeta local.",
 			Handler:     cmdPlayLocal,
 		},
 		{
 			Name:        "queue",
 			Aliases:     []string{"q"},
-			Description: "Muestra las siguientes 5 canciones en la cola.",
 			Handler:     cmdQueue,
 		},
 		{
 			Name:        "now",
 			Aliases:     []string{"np"},
-			Description: "Muestra la canción actual y su progreso.",
 			Handler:     cmdNow,
 		},
 		{
 			Name:        "pause",
-			Description: "Pausa la canción actual.",
 			AdminOnly:   true,
 			Handler:     cmdPause,
 		},
 		{
 			Name:        "resume",
-			Description: "Reanuda la canción actual.",
 			AdminOnly:   true,
 			Handler:     cmdResume,
 		},
 		{
 			Name:        "skip",
 			Aliases:     []string{"s"},
-			Description: "Salta la canción que está sonando actualmente.",
 			AdminOnly:   true,
 			Handler:     cmdSkip,
 		},
 		{
 			Name:        "clear",
-			Description: "Elimina todas las canciones de la cola.",
 			AdminOnly:   true,
 			Handler:     cmdClear,
 		},
 		{
 			Name:        "stop",
-			Description: "Detiene la música y limpia la cola.",
 			AdminOnly:   true,
 			Handler:     cmdStop,
 		},
 		{
 			Name:        "filter",
-			Description: "Aplica un filtro DSP (nightcore, bassboost, echo, off).",
 			AdminOnly:   true,
 			Handler:     cmdFilter,
 		},
 		{
 			Name:        "seek",
-			Description: "Salta a un segundo específico de la canción (ej: !seek 60).",
 			AdminOnly:   true,
 			Handler:     cmdSeek,
 		},
 		{
 			Name:        "speed",
-			Description: "Cambia la velocidad (ej: !speed 1.5).",
 			AdminOnly:   true,
 			Handler:     cmdSpeed,
 		},
 		{
 			Name:        "volume",
 			Aliases:     []string{"v", "vol"},
-			Description: "Ajusta el volumen (0 a 100).",
 			AdminOnly:   true,
 			Handler:     cmdVolume,
 		},
 		{
 			Name:        "help",
 			Aliases:     []string{"h"},
-			Description: "Muestra este mensaje de ayuda.",
 			Handler:     cmdHelp,
 		},
 	}
@@ -228,7 +131,7 @@ func getSenderName(e *gumble.TextMessageEvent) string {
 
 func cmdHelp(b *BotClient, e *gumble.TextMessageEvent, args []string) {
 	var sb strings.Builder
-	sb.WriteString("<b>Comandos de MumbleBeats:</b><br><ul>")
+	sb.WriteString("<b>" + i18n.Get(b.Config.Language, "cmd_help_title") + "</b><br><ul>")
 	for _, cmd := range BotCommands {
 		aliasStr := ""
 		if len(cmd.Aliases) > 0 {
@@ -238,7 +141,8 @@ func cmdHelp(b *BotClient, e *gumble.TextMessageEvent, args []string) {
 		if cmd.AdminOnly {
 			adminStr = " <span style='color:red;'>[Admin]</span>"
 		}
-		sb.WriteString(fmt.Sprintf("<li><b>!%s</b>%s%s - %s</li>", cmd.Name, aliasStr, adminStr, cmd.Description))
+		desc := i18n.Get(b.Config.Language, "cmd_help_"+cmd.Name)
+		sb.WriteString(fmt.Sprintf("<li><b>!%s</b>%s%s - %s</li>", cmd.Name, aliasStr, adminStr, desc))
 	}
 	sb.WriteString("</ul>")
 	e.Sender.Send(sb.String())
@@ -302,16 +206,10 @@ func cmdPlay(b *BotClient, e *gumble.TextMessageEvent, args []string) {
 
 		id, err := db.AddTrack(metadata.Title, metadata.WebpageURL, "youtube", senderName, metadata.Thumbnail, metadata.Duration)
 		if err != nil {
-			e.Sender.Send(fmt.Sprintf("Error añadiendo a la cola: %v", err))
+			e.Sender.Send(fmt.Sprintf("Error: %v", err))
 		} else {
-			imgTag := ""
-			if metadata.Thumbnail != "" {
-				imgBase64 := audio.GetThumbnailBase64(metadata.Thumbnail, "mqdefault")
-				if imgBase64 != "" {
-					imgTag = fmt.Sprintf(`<br/><img src="%s" height="90" />`, imgBase64)
-				}
-			}
-			e.Sender.Send(fmt.Sprintf("'%s' añadido a la cola (ID: %d)%s", metadata.Title, id, imgTag))
+			e.Sender.Send(fmt.Sprintf("%s: <b>%s</b> (ID: %d)", i18n.Get(b.Config.Language, "queued"), metadata.Title, id))
+			b.Player.Run()
 		}
 	}()
 }
@@ -337,21 +235,19 @@ func cmdRadio(b *BotClient, e *gumble.TextMessageEvent, args []string) {
 	}
 	query := strings.Join(args, " ")
 	
-	// Si es una URL, agregarla directamente
 	if strings.HasPrefix(query, "http://") || strings.HasPrefix(query, "https://") {
 		id, err := db.AddTrack("Radio", query, "radio", getSenderName(e), "", 0)
 		if err != nil {
-			e.Sender.Send(fmt.Sprintf("Error añadiendo radio: %v", err))
+			e.Sender.Send(fmt.Sprintf("Error: %v", err))
 		} else {
-			e.Sender.Send(fmt.Sprintf("Radio añadida a la cola (ID: %d)", id))
+			e.Sender.Send(fmt.Sprintf("%s: <b>%s</b> (ID: %d)", i18n.Get(b.Config.Language, "queued"), args[0], id))
+			b.Player.Run()
 		}
 		return
 	}
 	
-	// Si no es URL, buscar emisora
 	e.Sender.Send(fmt.Sprintf("Buscando emisora '%s'...", query))
 	go func() {
-		// Import "mumblebeats/internal/api" is required
 		stations, err := audio.SearchRadio(query)
 		if err != nil {
 			e.Sender.Send(fmt.Sprintf("Error buscando emisora: %v", err))
@@ -363,7 +259,6 @@ func cmdRadio(b *BotClient, e *gumble.TextMessageEvent, args []string) {
 			return
 		}
 		
-		// Usar el primer resultado
 		station := stations[0]
 		id, err := db.AddTrack("Radio: "+station.Name, station.URL, "radio", getSenderName(e), station.Favicon, 0)
 		if err != nil {
@@ -397,7 +292,7 @@ func cmdPlayLocal(b *BotClient, e *gumble.TextMessageEvent, args []string) {
 
 func cmdQueue(b *BotClient, e *gumble.TextMessageEvent, args []string) {
 	go func() {
-		tracks, err := db.GetQueue(6) // Fetch 6 in case the first one is playing
+		tracks, err := db.GetQueue(6) 
 		if err != nil {
 			e.Sender.Send(fmt.Sprintf("Error obteniendo cola: %v", err))
 			return
@@ -468,14 +363,14 @@ func cmdNow(b *BotClient, e *gumble.TextMessageEvent, args []string) {
 func cmdPause(b *BotClient, e *gumble.TextMessageEvent, args []string) {
 	if b.Player != nil {
 		b.Player.Pause()
-		e.Sender.Send("⏸️ Reproducción pausada.")
+		e.Sender.Send(i18n.Get(b.Config.Language, "paused"))
 	}
 }
 
 func cmdResume(b *BotClient, e *gumble.TextMessageEvent, args []string) {
 	if b.Player != nil {
 		b.Player.Resume()
-		e.Sender.Send("▶️ Reproducción reanudada.")
+		e.Sender.Send(i18n.Get(b.Config.Language, "resumed"))
 	}
 }
 
