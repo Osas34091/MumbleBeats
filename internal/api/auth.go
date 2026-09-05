@@ -38,6 +38,7 @@ func (s *Server) handleSetup(w http.ResponseWriter, r *http.Request) {
 		MumbleUsername string `json:"mumble_username"`
 		MumblePassword string `json:"mumble_password"`
 		MumbleChannel  string `json:"mumble_channel"`
+		Language       string `json:"language"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -62,6 +63,9 @@ func (s *Server) handleSetup(w http.ResponseWriter, r *http.Request) {
 	s.Bot.Config.Username = req.MumbleUsername
 	s.Bot.Config.Password = req.MumblePassword
 	s.Bot.Config.ChannelID = 0
+	if req.Language != "" {
+		s.Bot.Config.Language = req.Language
+	}
 
 	config.SaveConfig(s.Bot.Config, "config.json")
 	

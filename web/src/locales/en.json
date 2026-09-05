@@ -47,5 +47,20 @@
     "no_files": "No local files found.",
     "play": "Play",
     "delete": "Delete"
+  },
+  "setup": {
+    "title": "Initial Setup",
+    "admin_account": "1. Administrator Account",
+    "admin_desc": "Create an account to securely access this dashboard from anywhere.",
+    "mumble_conn": "2. Mumble Connection",
+    "mumble_desc": "Enter the details of the Mumble server the bot will connect to.",
+    "server_address": "Server Address (IP / Domain)",
+    "bot_name": "Bot Name in Mumble",
+    "channel_opt": "Channel (Optional)",
+    "submit": "Complete Setup and Start Bot",
+    "setting_up": "Setting up...",
+    "req_user_pass": "Username and password are required.",
+    "err_conn": "Failed to connect to server.",
+    "language": "Language"
   }
 }

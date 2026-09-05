@@ -47,5 +47,20 @@
     "no_files": "No se encontraron archivos locales.",
     "play": "Reproducir",
     "delete": "Eliminar"
+  },
+  "setup": {
+    "title": "Configuración Inicial",
+    "admin_account": "1. Cuenta de Administrador",
+    "admin_desc": "Crea una cuenta para acceder a este panel de control de forma segura desde cualquier lugar.",
+    "mumble_conn": "2. Conexión a Mumble",
+    "mumble_desc": "Ingresa los detalles del servidor de Mumble al que se conectará el bot.",
+    "server_address": "Dirección del Servidor (IP / Dominio)",
+    "bot_name": "Nombre del Bot en Mumble",
+    "channel_opt": "Canal (opcional)",
+    "submit": "Completar Configuración e Iniciar Bot",
+    "setting_up": "Configurando...",
+    "req_user_pass": "Usuario y contraseña son requeridos.",
+    "err_conn": "Fallo en la conexión con el servidor.",
+    "language": "Idioma"
   }
 }

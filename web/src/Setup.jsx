@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { Settings, Save, Server, Shield, Music } from 'lucide-react';
 import { useAuth } from './AuthContext';
+import { useTranslation } from 'react-i18next';
 
 function Setup() {
+  const { t, i18n } = useTranslation();
   const { checkAuth } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -16,7 +18,7 @@ function Setup() {
     const data = Object.fromEntries(formData.entries());
 
     if (!data.username || !data.password) {
-      setError("Usuario y contraseña son requeridos.");
+      setError(t('setup.req_user_pass'));
       setIsLoading(false);
       return;
     }
@@ -37,7 +39,7 @@ function Setup() {
         await checkAuth();
       }
     } catch (err) {
-      setError("Fallo en la conexión con el servidor.");
+      setError(t('setup.err_conn'));
     } finally {
       setIsLoading(false);
     }
@@ -53,7 +55,7 @@ function Setup() {
         <h1 className="text-3xl font-bold bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">
           MumbleBeats
         </h1>
-        <p className="text-slate-400 font-medium">Configuración Inicial</p>
+        <p className="text-slate-400 font-medium">{t('setup.title')}</p>
       </div>
 
       <div className="glass-panel w-full max-w-2xl p-8 rounded-3xl relative overflow-hidden">
@@ -69,21 +71,32 @@ function Setup() {
           
           {/* Admin Account Section */}
           <section>
-            <h2 className="text-lg font-bold text-slate-200 mb-4 flex items-center gap-2 border-b border-slate-800 pb-2">
-              <Shield size={20} className="text-primary-400" />
-              1. Cuenta de Administrador
+            <h2 className="text-lg font-bold text-slate-200 mb-4 flex items-center justify-between border-b border-slate-800 pb-2">
+              <span className="flex items-center gap-2">
+                <Shield size={20} className="text-primary-400" />
+                {t('setup.admin_account')}
+              </span>
+              <select 
+                name="language"
+                value={i18n.language} 
+                onChange={(e) => i18n.changeLanguage(e.target.value)} 
+                className="bg-slate-800/50 border border-slate-700/50 rounded-lg py-1 px-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-primary-500"
+              >
+                <option value="en">EN</option>
+                <option value="es">ES</option>
+              </select>
             </h2>
             <p className="text-xs text-slate-500 mb-4">
-              Crea una cuenta para acceder a este panel de control de forma segura desde cualquier lugar.
+              {t('setup.admin_desc')}
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-slate-400 mb-1">Nombre de Usuario</label>
+                <label className="block text-sm font-medium text-slate-400 mb-1">{t('dashboard.username')}</label>
                 <input name="username" type="text" required placeholder="Ej: admin" className="w-full bg-slate-800/50 border border-slate-700/50 rounded-xl py-3 px-4 text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-400 mb-1">Contraseña</label>
-                <input name="password" type="password" required placeholder="Contraseña segura" className="w-full bg-slate-800/50 border border-slate-700/50 rounded-xl py-3 px-4 text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all" />
+                <label className="block text-sm font-medium text-slate-400 mb-1">{t('dashboard.password')}</label>
+                <input name="password" type="password" required placeholder="..." className="w-full bg-slate-800/50 border border-slate-700/50 rounded-xl py-3 px-4 text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all" />
               </div>
             </div>
           </section>
@@ -92,30 +105,30 @@ function Setup() {
           <section>
             <h2 className="text-lg font-bold text-slate-200 mb-4 flex items-center gap-2 border-b border-slate-800 pb-2">
               <Server size={20} className="text-primary-400" />
-              2. Conexión a Mumble
+              {t('setup.mumble_conn')}
             </h2>
             <p className="text-xs text-slate-500 mb-4">
-              Ingresa los detalles del servidor de Mumble al que se conectará el bot.
+              {t('setup.mumble_desc')}
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-slate-400 mb-1">Dirección del Servidor (IP / Dominio)</label>
+                <label className="block text-sm font-medium text-slate-400 mb-1">{t('setup.server_address')}</label>
                 <input name="mumble_address" type="text" defaultValue="localhost" required className="w-full bg-slate-800/50 border border-slate-700/50 rounded-xl py-3 px-4 text-white focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-400 mb-1">Puerto</label>
+                <label className="block text-sm font-medium text-slate-400 mb-1">{t('dashboard.port')}</label>
                 <input name="mumble_port" type="text" defaultValue="64738" required className="w-full bg-slate-800/50 border border-slate-700/50 rounded-xl py-3 px-4 text-white focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-400 mb-1">Nombre del Bot en Mumble</label>
+                <label className="block text-sm font-medium text-slate-400 mb-1">{t('setup.bot_name')}</label>
                 <input name="mumble_username" type="text" defaultValue="MumbleBeats" required className="w-full bg-slate-800/50 border border-slate-700/50 rounded-xl py-3 px-4 text-white focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-400 mb-1">Contraseña (opcional)</label>
+                <label className="block text-sm font-medium text-slate-400 mb-1">{t('dashboard.password')}</label>
                 <input name="mumble_password" type="password" className="w-full bg-slate-800/50 border border-slate-700/50 rounded-xl py-3 px-4 text-white focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all" />
               </div>
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-slate-400 mb-1">Canal (opcional)</label>
+                <label className="block text-sm font-medium text-slate-400 mb-1">{t('setup.channel_opt')}</label>
                 <input name="mumble_channel" type="text" defaultValue="Root" className="w-full bg-slate-800/50 border border-slate-700/50 rounded-xl py-3 px-4 text-white focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all" />
               </div>
             </div>
@@ -126,8 +139,8 @@ function Setup() {
             disabled={isLoading} 
             className="mt-4 flex items-center justify-center gap-2 w-full py-4 bg-primary-600 hover:bg-primary-500 text-white font-bold rounded-xl transition-all shadow-xl shadow-primary-500/30 hover:shadow-primary-500/50 disabled:opacity-50 text-lg"
           >
-            {isLoading ? 'Configurando...' : (
-              <><Save size={24} /> Completar Configuración e Iniciar Bot</>
+            {isLoading ? t('setup.setting_up') : (
+              <><Save size={24} /> {t('setup.submit')}</>
             )}
           </button>
         </form>

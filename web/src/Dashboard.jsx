@@ -439,13 +439,13 @@ function Dashboard() {
           onClick={() => setActiveTab('player')}
           className={`flex items-center gap-2 px-4 py-2 font-medium transition-all ${activeTab === 'player' ? 'text-primary-400 border-b-2 border-primary-500' : 'text-slate-400 hover:text-slate-200'}`}
         >
-          <Music size={18} /> Reproductor
+          <Music size={18} /> {t('nav.dashboard')}
         </button>
         <button 
           onClick={() => setActiveTab('settings')}
           className={`flex items-center gap-2 px-4 py-2 font-medium transition-all ${activeTab === 'settings' ? 'text-primary-400 border-b-2 border-primary-500' : 'text-slate-400 hover:text-slate-200'}`}
         >
-          <Settings size={18} /> Configuración
+          <Settings size={18} /> {t('dashboard.settings')}
         </button>
       </div>
 
@@ -460,7 +460,7 @@ function Dashboard() {
             
             <h2 className="text-sm font-bold text-slate-400 tracking-widest uppercase mb-6 flex items-center gap-2">
               <Volume2 size={16} className={currentTrack ? "text-primary-400 animate-pulse" : ""} />
-              Reproduciendo Ahora
+              {t('dashboard.now_playing')}
             </h2>
             
             {currentTrack ? (
@@ -643,8 +643,8 @@ function Dashboard() {
             ) : (
               <div className="py-12 flex flex-col items-center justify-center text-slate-500 gap-4">
                 <Music size={48} className="opacity-50 mb-2" />
-                <p className="text-lg font-medium">El bot está en silencio.</p>
-                <p className="text-sm">Busca una canción para empezar.</p>
+                <p className="text-lg font-medium">{t('dashboard.no_music')}</p>
+                <p className="text-sm">{t('dashboard.enter_url')}</p>
               </div>
             )}
           </div>
@@ -659,7 +659,7 @@ function Dashboard() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Busca en YouTube o pega un enlace..."
+                placeholder={t('dashboard.enter_url')}
                 className="w-full bg-transparent border-none py-4 pl-12 pr-32 text-white placeholder:text-slate-500 focus:outline-none focus:ring-0 text-lg"
                 disabled={isSearching}
               />
@@ -680,14 +680,14 @@ function Dashboard() {
           {/* Playlists */}
           <div className="glass-panel rounded-2xl p-6 relative">
             <h2 className="text-sm font-bold text-slate-400 tracking-widest uppercase mb-4 flex items-center gap-2">
-              <ListMusic size={16} /> Playlists Guardadas
+              <ListMusic size={16} /> {t('playlists.title')}
             </h2>
             <form onSubmit={handleSavePlaylist} className="flex gap-2 mb-4">
               <input
                 type="text"
                 value={playlistName}
                 onChange={(e) => setPlaylistName(e.target.value)}
-                placeholder="Nombre para guardar la cola actual..."
+                placeholder={t('playlists.enter_name')}
                 className="flex-1 bg-slate-800/50 border border-slate-700/50 rounded-xl py-2 px-4 text-white placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-primary-500 text-sm"
                 disabled={isLoading}
               />
@@ -696,12 +696,12 @@ function Dashboard() {
                 disabled={isLoading || !playlistName.trim()}
                 className="px-4 py-2 bg-primary-600 text-white font-semibold rounded-xl hover:bg-primary-500 transition-colors disabled:opacity-50 text-sm whitespace-nowrap"
               >
-                Guardar
+                {t('playlists.save_btn')}
               </button>
             </form>
             <div className="flex flex-wrap gap-2">
               {playlists.length === 0 ? (
-                <div className="text-sm text-slate-500 py-2">No tienes playlists guardadas.</div>
+                <div className="text-sm text-slate-500 py-2">{t('playlists.no_playlists')}</div>
               ) : (
                 playlists.map(name => (
                   <button
@@ -723,7 +723,7 @@ function Dashboard() {
               <div className="bg-primary-500/20 p-1.5 rounded-lg text-primary-400">
                 <ListMusic size={16} />
               </div>
-              Subir MP3 Local
+              {t('dashboard.upload_mp3')}
             </h2>
             <div className="flex gap-2 mb-2">
               <input
@@ -822,7 +822,7 @@ function Dashboard() {
       <div className="glass-panel p-6 rounded-2xl max-w-2xl mx-auto">
         <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
           <Settings size={24} className="text-primary-400" />
-          Ajustes del Servidor
+          {t('dashboard.bot_config')}
         </h2>
         {Object.keys(config).length > 0 ? (
         <form onSubmit={async (e) => {
@@ -835,47 +835,57 @@ function Dashboard() {
               username: e.target.username.value,
               password: e.target.password.value,
               channel_id: parseInt(e.target.channel_id.value) || 0,
+              language: e.target.language.value,
               insecure: e.target.insecure.checked,
               admins: e.target.admins.value.split(',').map(s => s.trim()).filter(Boolean)
             }
             await fetch('/api/config', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(req)})
             setConfig(req)
-            alert("Configuración guardada.")
+            alert(t('dashboard.saved'))
             setActiveTab('player')
           } catch(err) {
-            alert("Error al guardar.")
+            alert(t('dashboard.error_save'))
           }
           setIsLoading(false)
         }} className="flex flex-col gap-4">
           
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-400 mb-1">Dirección del Servidor</label>
+              <label className="block text-sm font-medium text-slate-400 mb-1">{t('dashboard.mumble_server')}</label>
               <input name="server_address" defaultValue={config.server_address || ''} className="w-full bg-slate-800/50 border border-slate-700/50 rounded-xl py-2 px-4 text-white placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-primary-500" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-400 mb-1">Puerto</label>
+              <label className="block text-sm font-medium text-slate-400 mb-1">{t('dashboard.port')}</label>
               <input name="server_port" defaultValue={config.server_port || ''} className="w-full bg-slate-800/50 border border-slate-700/50 rounded-xl py-2 px-4 text-white placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-primary-500" />
             </div>
           </div>
           
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-400 mb-1">Nombre de Usuario</label>
+              <label className="block text-sm font-medium text-slate-400 mb-1">{t('dashboard.username')}</label>
               <input name="username" defaultValue={config.username || ''} className="w-full bg-slate-800/50 border border-slate-700/50 rounded-xl py-2 px-4 text-white placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-primary-500" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-400 mb-1">Contraseña</label>
-              <input name="password" type="password" placeholder="Dejar en blanco para no cambiar" className="w-full bg-slate-800/50 border border-slate-700/50 rounded-xl py-2 px-4 text-white placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-primary-500" />
+              <label className="block text-sm font-medium text-slate-400 mb-1">{t('dashboard.password')}</label>
+              <input name="password" type="password" placeholder={t('dashboard.password_ph')} className="w-full bg-slate-800/50 border border-slate-700/50 rounded-xl py-2 px-4 text-white placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-primary-500" />
             </div>
           </div>
           
-          <div>
-            <label className="block text-sm font-medium text-slate-400 mb-1">Canal (Por Defecto)</label>
-            <select name="channel_id" defaultValue={config.channel_id || 0} className="w-full bg-slate-800/50 border border-slate-700/50 rounded-xl py-2 px-4 text-white placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-primary-500">
-              <option value="0">Root (Por Defecto)</option>
-              {channels.map(ch => <option key={ch.id} value={ch.id}>{ch.name}</option>)}
-            </select>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-400 mb-1">{t('dashboard.channel_id')}</label>
+              <select name="channel_id" defaultValue={config.channel_id || 0} className="w-full bg-slate-800/50 border border-slate-700/50 rounded-xl py-2 px-4 text-white placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-primary-500">
+                <option value="0">Root (Por Defecto)</option>
+                {channels.map(ch => <option key={ch.id} value={ch.id}>{ch.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-400 mb-1">{t('dashboard.language')}</label>
+              <select name="language" defaultValue={config.language || 'en'} className="w-full bg-slate-800/50 border border-slate-700/50 rounded-xl py-2 px-4 text-white placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-primary-500">
+                <option value="en">English</option>
+                <option value="es">Español</option>
+              </select>
+            </div>
           </div>
           
           <div>
@@ -891,7 +901,7 @@ function Dashboard() {
           </div>
           
           <button type="submit" disabled={isLoading} className="mt-4 flex items-center justify-center gap-2 w-full py-3 bg-primary-600 hover:bg-primary-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-primary-500/30 disabled:opacity-50">
-            <Save size={20} /> Guardar Cambios
+            <Save size={20} /> {t('dashboard.save')}
           </button>
         </form>
         ) : (
