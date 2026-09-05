@@ -200,7 +200,7 @@ func RemoveTrack(id int64) error {
 	return err
 }
 
-func MoveTrackUp(id int) error {
+func MoveTrackUp(id int64) error {
 	// Obtener la posición actual
 	var currentPos int
 	err := DB.QueryRow("SELECT position FROM queue WHERE id = ?", id).Scan(&currentPos)
@@ -218,7 +218,7 @@ func MoveTrackUp(id int) error {
 	return tx.Commit()
 }
 
-func MoveTrackDown(id int) error {
+func MoveTrackDown(id int64) error {
 	var currentPos int
 	err := DB.QueryRow("SELECT position FROM queue WHERE id = ?", id).Scan(&currentPos)
 	if err != nil { return err }

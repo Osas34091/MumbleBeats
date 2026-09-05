@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -316,8 +317,7 @@ func (s *Server) handleResume(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleRemoveTrack(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
-	var id int
-	fmt.Sscanf(idStr, "%d", &id)
+	id, _ := strconv.ParseInt(idStr, 10, 64)
 	
 	err := db.RemoveTrack(id)
 	if err != nil {
@@ -331,8 +331,7 @@ func (s *Server) handleRemoveTrack(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleMoveUp(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
-	var id int
-	fmt.Sscanf(idStr, "%d", &id)
+	id, _ := strconv.ParseInt(idStr, 10, 64)
 	db.MoveTrackUp(id)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]bool{"success": true})
@@ -340,8 +339,7 @@ func (s *Server) handleMoveUp(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleMoveDown(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
-	var id int
-	fmt.Sscanf(idStr, "%d", &id)
+	id, _ := strconv.ParseInt(idStr, 10, 64)
 	db.MoveTrackDown(id)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]bool{"success": true})
