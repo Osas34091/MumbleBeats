@@ -209,7 +209,6 @@ func cmdPlay(b *BotClient, e *gumble.TextMessageEvent, args []string) {
 			e.Sender.Send(fmt.Sprintf("Error: %v", err))
 		} else {
 			e.Sender.Send(fmt.Sprintf("%s: <b>%s</b> (ID: %d)", i18n.Get(b.Config.Language, "queued"), metadata.Title, id))
-			b.Player.Run()
 		}
 	}()
 }
@@ -241,7 +240,6 @@ func cmdRadio(b *BotClient, e *gumble.TextMessageEvent, args []string) {
 			e.Sender.Send(fmt.Sprintf("Error: %v", err))
 		} else {
 			e.Sender.Send(fmt.Sprintf("%s: <b>%s</b> (ID: %d)", i18n.Get(b.Config.Language, "queued"), args[0], id))
-			b.Player.Run()
 		}
 		return
 	}
