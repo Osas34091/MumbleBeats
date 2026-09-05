@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Play, Pause, SkipForward, Square, Trash2, Search, Music, ListMusic, User, Volume2, Volume, Volume1, VolumeX, Settings, Save, GripVertical } from 'lucide-react'
+import { Play, Pause, SkipForward, Square, Trash2, Search, Music, ListMusic, User, Volume2, Volume, Volume1, VolumeX, Settings, Save, GripVertical, Globe } from 'lucide-react'
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -110,6 +110,19 @@ function Dashboard() {
   const [config, setConfig] = useState({})
   const [channels, setChannels] = useState([])
   const [isChannelDropdownOpen, setIsChannelDropdownOpen] = useState(false)
+  const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false)
+
+  const handleChangeLang = async (lang) => {
+    i18n.changeLanguage(lang);
+    setIsLangDropdownOpen(false);
+    try {
+      if (Object.keys(config).length > 0) {
+        const req = { ...config, language: lang };
+        await fetch('/api/config', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(req)});
+        setConfig(req);
+      }
+    } catch(err) {}
+  };
 
   const handleDragEnd = async (event) => {
     const { active, over } = event;
@@ -354,7 +367,7 @@ function Dashboard() {
             <h1 className="text-xl font-bold bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">
               MumbleBeats
             </h1>
-            <p className="text-xs text-slate-400 font-medium tracking-wider uppercase">Dashboard de Control</p>
+            <p className="text-xs text-slate-400 font-medium tracking-wider uppercase">{t('dashboard.control_dashboard')}</p>
           </div>
         </div>
         
@@ -366,9 +379,9 @@ function Dashboard() {
               disabled={isLoading || channels.length === 0}
               className="flex items-center gap-2 bg-slate-800/80 hover:bg-slate-700/80 px-4 py-1.5 rounded-full border border-slate-700 transition-colors disabled:opacity-50"
             >
-              <span className="text-xs text-slate-400 font-medium">Canal:</span>
+              <span className="text-xs text-slate-400 font-medium">{t('dashboard.channel_label')}</span>
               <span className="text-sm text-white font-semibold truncate max-w-[120px]">
-                {playbackState.current_channel || 'Seleccionar...'}
+                {playbackState.current_channel || t('dashboard.channel_select')}
               </span>
               <svg className={`w-4 h-4 text-slate-400 transition-transform ${isChannelDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
             </button>
@@ -391,44 +404,78 @@ function Dashboard() {
             )}
           </div>
           
+          {/* Language Selector */}
+          <div className="relative hidden md:block">
+            <button 
+              onClick={() => setIsLangDropdownOpen(!isLangDropdownOpen)}
+              className="flex items-center gap-2 bg-slate-800/80 hover:bg-slate-700/80 px-3 py-1.5 rounded-full border border-slate-700 transition-colors"
+            >
+              <Globe size={16} className="text-primary-400" />
+              <span className="text-sm text-white font-semibold">
+                {i18n.language === 'es' ? 'ES' : 'EN'}
+              </span>
+              <svg className={`w-4 h-4 text-slate-400 transition-transform ${isLangDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+            </button>
+            
+            {isLangDropdownOpen && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setIsLangDropdownOpen(false)}></div>
+                <div className="absolute right-0 mt-2 w-32 bg-slate-800 border border-slate-700 rounded-xl shadow-xl z-20 overflow-hidden py-1">
+                  <button
+                    onClick={() => handleChangeLang('en')}
+                    className={`w-full text-left px-4 py-2 text-sm transition-colors ${i18n.language !== 'es' ? 'bg-primary-500/20 text-primary-400 font-medium' : 'text-slate-300 hover:bg-slate-700/50 hover:text-white'}`}
+                  >
+                    English
+                  </button>
+                  <button
+                    onClick={() => handleChangeLang('es')}
+                    className={`w-full text-left px-4 py-2 text-sm transition-colors ${i18n.language === 'es' ? 'bg-primary-500/20 text-primary-400 font-medium' : 'text-slate-300 hover:bg-slate-700/50 hover:text-white'}`}
+                  >
+                    Español
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+          
         {isOnline ? (
           <div className="flex items-center gap-2 text-sm text-emerald-400 font-medium px-3 py-1.5 bg-emerald-400/10 rounded-full border border-emerald-400/20">
             <span className="relative flex h-2.5 w-2.5">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
             </span>
-            Online
+            {t('dashboard.online')}
           </div>
         ) : (
           <div className="flex items-center gap-2 text-sm text-rose-400 font-medium px-3 py-1.5 bg-rose-400/10 rounded-full border border-rose-400/20">
             <span className="relative flex h-2.5 w-2.5">
               <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500"></span>
             </span>
-            Offline
+            {t('dashboard.offline')}
           </div>
         )}
         <button
           onClick={async () => {
-            if(confirm("¿Seguro que deseas cerrar sesión?")) {
+            if(confirm(t('dashboard.confirm_logout'))) {
               await fetch('/api/logout', { method: 'POST' });
               window.location.reload();
             }
           }}
           className="text-xs bg-slate-800/80 text-slate-300 hover:bg-slate-700 hover:text-white px-3 py-1.5 rounded-full border border-slate-700 transition-all font-medium"
         >
-          Cerrar Sesión
+          {t('dashboard.logout')}
         </button>
         <button
           onClick={() => {
-            if(confirm("¿Seguro que deseas apagar y desconectar el bot por completo?")) {
+            if(confirm(t('dashboard.confirm_shutdown'))) {
               fetch('/api/shutdown', { method: 'POST' });
               setIsOnline(false);
             }
           }}
           className="text-xs bg-rose-500/20 text-rose-400 hover:bg-rose-500/40 px-3 py-1.5 rounded-full border border-rose-500/30 transition-all font-bold"
-          title="Desconecta el bot y cierra la consola"
+          title={t('dashboard.shutdown')}
         >
-          Apagar Bot
+          {t('dashboard.shutdown')}
         </button>
         </div>
       </header>
@@ -574,7 +621,7 @@ function Dashboard() {
                     {/* Advanced Controls */}
                     <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-sm mt-2">
                       <div className="flex items-center gap-2">
-                        <span className="text-slate-400 font-medium text-xs">Velocidad:</span>
+                        <span className="text-slate-400 font-medium text-xs">{t('dashboard.speed')}</span>
                         <CustomSelect
                           value={playbackState.speed}
                           options={[
@@ -592,11 +639,11 @@ function Dashboard() {
                       </div>
                       
                       <div className="flex items-center gap-2">
-                        <span className="text-slate-400 font-medium text-xs">Filtro DSP:</span>
+                        <span className="text-slate-400 font-medium text-xs">{t('dashboard.dsp_filter')}</span>
                         <CustomSelect
                           value="off"
                           options={[
-                            {value: "off", label: "Ninguno (Normal)"},
+                            {value: "off", label: t('dashboard.dsp_none')},
                             {value: "nightcore", label: "Nightcore"},
                             {value: "bassboost", label: "Bass Boost"},
                             {value: "echo", label: "Echo"}
@@ -835,7 +882,7 @@ function Dashboard() {
               username: e.target.username.value,
               password: e.target.password.value,
               channel_id: parseInt(e.target.channel_id.value) || 0,
-              language: e.target.language.value,
+              language: i18n.language,
               insecure: e.target.insecure.checked,
               admins: e.target.admins.value.split(',').map(s => s.trim()).filter(Boolean)
             }
@@ -875,28 +922,23 @@ function Dashboard() {
             <div>
               <label className="block text-sm font-medium text-slate-400 mb-1">{t('dashboard.channel_id')}</label>
               <select name="channel_id" defaultValue={config.channel_id || 0} className="w-full bg-slate-800/50 border border-slate-700/50 rounded-xl py-2 px-4 text-white placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-primary-500">
-                <option value="0">Root (Por Defecto)</option>
+                <option value="0">{t('dashboard.root_default')}</option>
                 {channels.map(ch => <option key={ch.id} value={ch.id}>{ch.name}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-400 mb-1">{t('dashboard.language')}</label>
-              <select name="language" defaultValue={config.language || 'en'} className="w-full bg-slate-800/50 border border-slate-700/50 rounded-xl py-2 px-4 text-white placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-primary-500">
-                <option value="en">English</option>
-                <option value="es">Español</option>
-              </select>
             </div>
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-slate-400 mb-1">Admins (separados por coma)</label>
+            <label className="block text-sm font-medium text-slate-400 mb-1">{t('dashboard.admins_comma')}</label>
             <input name="admins" defaultValue={(config.admins || []).join(', ')} className="w-full bg-slate-800/50 border border-slate-700/50 rounded-xl py-2 px-4 text-white placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-primary-500" />
           </div>
           
           <div className="flex items-center gap-2 mt-2">
             <input name="insecure" id="insecure" type="checkbox" defaultChecked={config.insecure} className="w-4 h-4 rounded bg-slate-800 border-slate-700 text-primary-500 focus:ring-primary-500" />
             <label htmlFor="insecure" className="text-sm font-medium text-slate-300 cursor-pointer">
-              Permitir conexiones inseguras (Insecure TLS) - Ignora errores de certificado
+              {t('dashboard.insecure_tls')}
             </label>
           </div>
           

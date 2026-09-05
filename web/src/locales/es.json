@@ -25,7 +25,22 @@
     "language": "Idioma",
     "save": "Guardar Configuración",
     "saved": "Guardado exitosamente",
-    "error_save": "Error al guardar configuración"
+    "error_save": "Error al guardar configuración",
+    "control_dashboard": "Dashboard de Control",
+    "channel_label": "Canal:",
+    "channel_select": "Seleccionar...",
+    "online": "En línea",
+    "offline": "Desconectado",
+    "logout": "Cerrar Sesión",
+    "shutdown": "Apagar Bot",
+    "confirm_logout": "¿Seguro que deseas cerrar sesión?",
+    "confirm_shutdown": "¿Seguro que deseas apagar y desconectar el bot por completo?",
+    "speed": "Velocidad:",
+    "dsp_filter": "Filtro DSP:",
+    "dsp_none": "Ninguno (Normal)",
+    "root_default": "Root (Por Defecto)",
+    "admins_comma": "Admins (separados por coma)",
+    "insecure_tls": "Permitir conexiones inseguras (Insecure TLS) - Ignora errores de certificado"
   },
   "playlists": {
     "title": "Playlists (Listas de reproducción)",

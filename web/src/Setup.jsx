@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Settings, Save, Server, Shield, Music } from 'lucide-react';
+import { Settings, Save, Server, Shield, Music, Globe } from 'lucide-react';
 import { useAuth } from './AuthContext';
 import { useTranslation } from 'react-i18next';
 
@@ -8,6 +8,7 @@ function Setup() {
   const { checkAuth } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -16,6 +17,7 @@ function Setup() {
 
     const formData = new FormData(e.target);
     const data = Object.fromEntries(formData.entries());
+    data.language = i18n.language;
 
     if (!data.username || !data.password) {
       setError(t('setup.req_user_pass'));
@@ -46,7 +48,41 @@ function Setup() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4 relative">
+      
+      {/* Language Selector Top Right */}
+      <div className="absolute top-4 right-4 md:top-8 md:right-8 z-50">
+        <button 
+          onClick={() => setIsLangDropdownOpen(!isLangDropdownOpen)}
+          className="flex items-center gap-2 bg-slate-800/80 hover:bg-slate-700/80 px-3 py-1.5 rounded-full border border-slate-700 transition-colors shadow-lg"
+        >
+          <Globe size={16} className="text-primary-400" />
+          <span className="text-sm text-white font-semibold">
+            {i18n.language === 'es' ? 'ES' : 'EN'}
+          </span>
+          <svg className={`w-4 h-4 text-slate-400 transition-transform ${isLangDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+        </button>
+        
+        {isLangDropdownOpen && (
+          <>
+            <div className="fixed inset-0 z-40" onClick={() => setIsLangDropdownOpen(false)}></div>
+            <div className="absolute right-0 mt-2 w-32 bg-slate-800 border border-slate-700 rounded-xl shadow-xl z-50 overflow-hidden py-1">
+              <button
+                onClick={() => { i18n.changeLanguage('en'); setIsLangDropdownOpen(false); }}
+                className={`w-full text-left px-4 py-2 text-sm transition-colors ${i18n.language !== 'es' ? 'bg-primary-500/20 text-primary-400 font-medium' : 'text-slate-300 hover:bg-slate-700/50 hover:text-white'}`}
+              >
+                English
+              </button>
+              <button
+                onClick={() => { i18n.changeLanguage('es'); setIsLangDropdownOpen(false); }}
+                className={`w-full text-left px-4 py-2 text-sm transition-colors ${i18n.language === 'es' ? 'bg-primary-500/20 text-primary-400 font-medium' : 'text-slate-300 hover:bg-slate-700/50 hover:text-white'}`}
+              >
+                Español
+              </button>
+            </div>
+          </>
+        )}
+      </div>
       
       <div className="mb-8 flex flex-col items-center gap-3">
         <div className="bg-primary-600 p-4 rounded-2xl text-white shadow-lg shadow-primary-500/30 animate-bounce">
@@ -71,20 +107,9 @@ function Setup() {
           
           {/* Admin Account Section */}
           <section>
-            <h2 className="text-lg font-bold text-slate-200 mb-4 flex items-center justify-between border-b border-slate-800 pb-2">
-              <span className="flex items-center gap-2">
-                <Shield size={20} className="text-primary-400" />
-                {t('setup.admin_account')}
-              </span>
-              <select 
-                name="language"
-                value={i18n.language} 
-                onChange={(e) => i18n.changeLanguage(e.target.value)} 
-                className="bg-slate-800/50 border border-slate-700/50 rounded-lg py-1 px-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-primary-500"
-              >
-                <option value="en">EN</option>
-                <option value="es">ES</option>
-              </select>
+            <h2 className="text-lg font-bold text-slate-200 mb-4 flex items-center gap-2 border-b border-slate-800 pb-2">
+              <Shield size={20} className="text-primary-400" />
+              {t('setup.admin_account')}
             </h2>
             <p className="text-xs text-slate-500 mb-4">
               {t('setup.admin_desc')}

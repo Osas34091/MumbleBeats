@@ -25,7 +25,22 @@
     "language": "Language",
     "save": "Save Configuration",
     "saved": "Saved successfully",
-    "error_save": "Error saving configuration"
+    "error_save": "Error saving configuration",
+    "control_dashboard": "Control Dashboard",
+    "channel_label": "Channel:",
+    "channel_select": "Select...",
+    "online": "Online",
+    "offline": "Offline",
+    "logout": "Log Out",
+    "shutdown": "Shutdown Bot",
+    "confirm_logout": "Are you sure you want to log out?",
+    "confirm_shutdown": "Are you sure you want to fully shutdown the bot?",
+    "speed": "Speed:",
+    "dsp_filter": "DSP Filter:",
+    "dsp_none": "None (Normal)",
+    "root_default": "Root (Default)",
+    "admins_comma": "Admins (comma-separated)",
+    "insecure_tls": "Allow insecure connections (Insecure TLS) - Ignores cert errors"
   },
   "playlists": {
     "title": "Playlists",
